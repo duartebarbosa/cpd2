@@ -7,19 +7,19 @@ THREADS=( 1 2 4 8 )
 FILES=( ex5-1d ex10-2d ex1000-50d ex1M-100d ex100k-200-3 ex100k-200-4-mod )
 
 serial(){
-	make clean docs_serial
+	make clean serial
 	sync
 
 	for((i=0; i < 6; i++)) do
 		echo "_________________________________________"
 		echo "input: "${FILES[i]}
-		time ./docs-serial sampleDocInstances/in/${FILES[i]}.in
+		time ./wolves-squirrels-serial sampleDocInstances/in/${FILES[i]}.in
 		cmp sampleDocInstances/in/${FILES[i]}.out sampleDocInstances/out/${FILES[i]}.out
 	done
 }
 
 omp(){
-	make clean docs_omp
+	make clean omp
 	sync
 
 	for((j=0; j < 4; j++)) do
@@ -28,14 +28,14 @@ omp(){
 		for((i=0; i < 6; i++)) do
 			echo "_________________________________________"
 			echo "input: "${FILES[i]}
-			time ./docs-omp sampleDocInstances/in/${FILES[i]}.in
+			time ./wolves-squirrels-omp sampleDocInstances/in/${FILES[i]}.in
 			cmp sampleDocInstances/in/${FILES[i]}.out sampleDocInstances/out/${FILES[i]}.out
 		done
 	done
 }
 
 mpi(){
-	make clean docs_mpi
+	make clean mpi
 	sync
 
 	for((j=0; j < 4; j++)) do
@@ -43,7 +43,7 @@ mpi(){
 		for((i=0; i < 6; i++)) do
 			echo "_________________________________________"
 			echo "input: "${FILES[i]}
-			time /usr/lib64/openmpi/bin/mpirun -np ${PROCESSES[j]} ./docs-mpi sampleDocInstances/in/${FILES[i]}.in
+			time /usr/lib64/openmpi/bin/mpirun -np ${PROCESSES[j]} ./wolves-squirrels-mpi sampleDocInstances/in/${FILES[i]}.in
 			cmp sampleDocInstances/in/${FILES[i]}.out sampleDocInstances/out/${FILES[i]}.out
 		done
 	done
@@ -51,7 +51,7 @@ mpi(){
 
 omp_mpi(){
 
-	make clean docs_mpi_omp
+	make clean mpi_omp
 	sync
 
 	for((k=0; k < 4; k++)) do
@@ -62,7 +62,7 @@ omp_mpi(){
 			for((i=0; i < 6; i++)) do
 				echo "_________________________________________"
 				echo "input: "${FILES[i]}
-				time /usr/lib64/openmpi/bin/mpirun -np ${PROCESSES[k]} ./docs-mpi-omp sampleDocInstances/in/${FILES[i]}.in
+				time /usr/lib64/openmpi/bin/mpirun -np ${PROCESSES[k]} ./wolves-squirrels-mpi-omp sampleDocInstances/in/${FILES[i]}.in
 				cmp sampleDocInstances/in/${FILES[i]}.out sampleDocInstances/out/${FILES[i]}.out
 			done
 		done
