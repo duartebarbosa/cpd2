@@ -1,3 +1,4 @@
+GROUP = xx
 CC = gcc
 DEBUGFLAGS = -ansi -Wall -pedantic -g
 GOODFLAGS = -O3 -march=native
@@ -10,33 +11,36 @@ setup:
 
 deploy: mrproper zip
 
-build: docs_serial docs_omp docs_mpi docs_mpi_omp
+build: serial omp mpi mpi_omp
 
 test:
 	bash test-me.sh
 
-docs_serial: docs-serial.c
-	$(CC) $(GOODFLAGS) $(TIMER) -fopenmp docs-serial.c -o docs-serial
+serial: wolves-squirrels-serial.c
+	$(CC) $(GOODFLAGS) $(TIMER) -fopenmp wolves-squirrels-serial.c -o wolves-squirrels-serial
 
-docs_omp: docs-omp.c
-	$(CC) $(GOODFLAGS) $(TIMER) -fopenmp docs-omp.c -o docs-omp
+omp: wolves-squirrels-omp.c
+	$(CC) $(GOODFLAGS) $(TIMER) -fopenmp wolves-squirrels-omp.c -o wolves-squirrels-omp
 
-docs_mpi: docs-mpi.c
-	/usr/lib64/openmpi/bin/mpicc $(GOODFLAGS) $(TIMER) -g docs-mpi.c -o docs-mpi
+mpi: wolves-squirrels-mpi.c
+	/usr/lib64/openmpi/bin/mpicc $(GOODFLAGS) $(TIMER) -g wolves-squirrels-mpi.c -o wolves-squirrels-mpi
 
-docs_mpi_omp: docs-mpi-omp.c
-	/usr/lib64/openmpi/bin/mpicc $(GOODFLAGS) $(TIMER) -fopenmp -g docs-mpi-omp.c -o docs-mpi-omp
+mpi_omp: wolves-squirrels-mpi-omp.c
+	/usr/lib64/openmpi/bin/mpicc $(GOODFLAGS) $(TIMER) -fopenmp -g wolves-squirrels-mpi-omp.c -o wolves-squirrels-mpi-omp
 
 backup:
-	@-tar -czf * backup.zip
+	@-tar -czf wolves-squirrels.tgz Makefile *.c report.pdf
 
 clean:
-	rm -f docs-serial docs-omp docs-mpi docs-mpi-omp *.o
+	rm -f wolves-squirrels-serial wolves-squirrels-omp wolves-squirrels-mpi wolves-squirrels-mpi *.o
 
 mrproper: clean
 	rm -rf log *.~ *~
 
-zip:
-	@-tar -czf docs.tgz Makefile *.c report.pdf
+zip_omp:
+	@-tar -czf g$(GROUP)omp.zip Makefile wolves-squirrels-serial.c wolves-squirrels-omp.c report.pdf
+
+zip_mpi:
+	@-tar -czf g$(GROUP)mpi.zip Makefile wolves-squirrels-serial.c wolves-squirrels-mpi.c report.pdf
 
 .PHONY: clean zip
