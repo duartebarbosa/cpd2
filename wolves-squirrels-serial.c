@@ -115,10 +115,20 @@ void print_world(){
 	printf("Squirrel breeding period: %d\n", squirrel_breeding_period);
 	printf("Number of generations: %d\n", number_of_generations);
 	int i;
+	
+	//print header
+    printf("  ");
+	for(i = 0; i < grid_size; i++){
+		printf("%d ", i);
+	}
+	printf("\n");
+	
+	//print world
 	for(i = 0; i < grid_size; i++){
 		int j;
+		printf("%d|", i);
 		for(j = 0; j < grid_size; j++){
-			printf("%c ", world[i][j].type);
+			printf("%c|", world[i][j].type);
 		}
 		printf("\n");
 	}
