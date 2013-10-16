@@ -19,3 +19,6 @@
 wolves-squirrels-serial
 wolves-squirrels-omp
 wolves-squirrels-mpi
+
+# Test files
+test.txt

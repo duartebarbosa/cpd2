@@ -131,24 +131,7 @@ void parse_input(char* filename){
 	char type;
 	while(fscanf(fp,"%d %d %c\n",&i, &j, &type) == 3) //All arguments read succesfully  
 	{  
-		   int starvation = EMPTY, breeding = EMPTY;
-		   switch(type){
-				case WOLF:
-					starvation = wolf_starvation_period;
-					breeding = wolf_breeding_period;
-					break;
-				case SQUIRREL:
-					//Squirrels have no starvation
-					breeding = squirrel_breeding_period;
-					break;
-				case ICE:
-					//No starvation nor breeding
-					break;
-				case TREE:
-					//No starvation nor breeding
-					break;
-		   }
-		   world[i][j] = create_world_cell(type, breeding, starvation);
+		   world[i][j] = create_world_cell(type, 0, 0);
 	}  
 }
 
