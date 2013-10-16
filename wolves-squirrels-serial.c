@@ -19,7 +19,10 @@ typedef struct _world_cell {
 void initialize_world_array();
 void parse_input(char* filename);
 void print_world();
+void print_world_stats();
+void start_world_simulation();
 world_cell create_world_cell(int type, int breeding_period, int starvation_period);
+void update_world_cell(int i, int j);
 
 // Global Variables
 world_cell world[MAX][MAX];
@@ -38,10 +41,70 @@ int main(int argc, char **argv)
 	number_of_generations = atoi(argv[5]);
 	
 	initialize_world_array();
+	
 	parse_input(argv[1]); //Filename
+	
+	print_world_stats();
 	print_world();
 	
+	start_world_simulation();
+	
 	return 0;
+}
+
+void start_world_simulation(){
+	int g;
+	for(g = 0; g < number_of_generations; g++){
+		printf("---- Generation %d ----\n", g);
+		
+		int i,j;
+		
+		//update 'red' cells, think chessboard
+		for(i = 0; i < grid_size; i++){
+			if(i % 2 == 0) {// even row
+				j = 0;
+			} else { //odd row
+				j = 1;
+			}
+			for (; j < grid_size; j += 2){
+				update_world_cell(i,j);
+			}
+		}
+				
+		//update 'black' cells, think chessboard
+		for(i = 0; i < grid_size; i++){
+			if(i % 2 == 0) {// even row
+				j = 1;
+			} else { //odd row
+				j = 0;
+			}
+			for (; j < grid_size; j += 2){
+				update_world_cell(i,j);
+			}
+		}
+		
+		print_world();
+	}
+}
+
+void update_world_cell(int i, int j){
+	world_cell *cell = &world[i][j];
+	
+	//perfom logic for each cell type
+	  switch(cell->type){
+			case WOLF:
+				//logic goes here
+				break;
+			case SQUIRREL:
+				//logic goes here
+				break;
+			case ICE:
+				//logic goes here
+				break;
+			case TREE:
+				//logic goes here
+				break;
+	   }	
 }
 
 void parse_input(char* filename){
@@ -109,11 +172,6 @@ void initialize_world_array(){
 }
 
 void print_world(){
-	printf("%d\n", grid_size);
-	printf("Wolf breeding period: %d\n", wolf_breeding_period);
-	printf("Wolf starvation period: %d\n", wolf_starvation_period);
-	printf("Squirrel breeding period: %d\n", squirrel_breeding_period);
-	printf("Number of generations: %d\n", number_of_generations);
 	int i;
 	
 	//print header
@@ -132,4 +190,12 @@ void print_world(){
 		}
 		printf("\n");
 	}
+}
+
+void print_world_stats(){
+	printf("Grid size: %d\n", grid_size);
+	printf("Wolf breeding period: %d\n", wolf_breeding_period);
+	printf("Wolf starvation period: %d\n", wolf_starvation_period);
+	printf("Squirrel breeding period: %d\n", squirrel_breeding_period);
+	printf("Number of generations: %d\n", number_of_generations);
 }
