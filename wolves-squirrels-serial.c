@@ -57,7 +57,7 @@ void start_world_simulation(){
 	int g = 0, i, j;
 	for(; g < number_of_generations; g++){
 		printf("---- Generation %d ----\n", g);
-		
+
 		//update 'red' cells, think chessboard
 		for(i = 0; i < grid_size; i++){
 			j = (i % 2) ? 1 : 0;
@@ -100,6 +100,8 @@ inline void update_world_cell(int i, int j){
 
 void parse_input(char* filename){
 
+	int i, j;
+	char type;
 	FILE *input;
 
 	if((input = fopen(filename, "r+")) == NULL){
@@ -111,9 +113,7 @@ void parse_input(char* filename){
 		printf("No grid size.");
 		exit(2);
 	}
-	
-	int i, j;
-	char type;
+
 	while(fscanf(input,"%d %d %c\n",&i, &j, &type) == 3){ //All arguments read succesfully
 		world[i][j] = create_world_cell(type, 0, 0);
 	}
