@@ -109,23 +109,26 @@ void update_world_cell(int i, int j){
 
 void parse_input(char* filename){
 
-	FILE *fp;
+	FILE *input;
 
-	if( (fp = fopen(filename, "r+")) == NULL){
+	if((input = fopen(filename, "r+")) == NULL){
 		printf("No such file %s\n", filename);
 		exit(1);
 	}
 
-	if (fscanf(fp, "%d\n", &grid_size) == 0){
+	if(fscanf(input, "%d\n", &grid_size) == 0){
 		printf("No grid size.");
 		exit(2);
 	}
 	
 	int i, j;
 	char type;
-	while(fscanf(fp,"%d %d %c\n",&i, &j, &type) == 3){ //All arguments read succesfully  
+	while(fscanf(input,"%d %d %c\n",&i, &j, &type) == 3){ //All arguments read succesfully
 		world[i][j] = create_world_cell(type, 0, 0);
-	}  
+	}
+
+	if(fclose(input) == EOF)
+		exit(3);
 }
 
 world_cell create_world_cell(int type,int breeding_period,int starvation_period){
