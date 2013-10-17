@@ -122,7 +122,7 @@ void parse_input(char* filename){
 		exit(3);
 }
 
-world_cell create_world_cell(int type,int breeding_period,int starvation_period){
+inline world_cell create_world_cell(int type,int breeding_period,int starvation_period){
 		world_cell *cell = (world_cell*)malloc(sizeof(world_cell));
 		cell->type = type;
 		cell->starvation_period = starvation_period;
