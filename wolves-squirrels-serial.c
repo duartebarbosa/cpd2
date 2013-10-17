@@ -53,8 +53,8 @@ int main(int argc, char **argv){
 }
 
 void start_world_simulation(){
-	int g;
-	for(g = 0; g < number_of_generations; g++){
+	int g = 0;
+	for(; g < number_of_generations; g++){
 		printf("---- Generation %d ----\n", g);
 		
 		int i,j;
@@ -142,30 +142,30 @@ world_cell create_world_cell(int type,int breeding_period,int starvation_period)
 }
 
 void initialize_world_array(){
-	int i;
-	for(i = 0; i < MAX; i++){
-		int j;
-		for(j = 0; j < MAX; j++){
+	int i = 0;
+	for(; i < MAX; i++){
+		int j = 0;
+		for(; j < MAX; j++){
 			world[i][j] = create_world_cell(EMPTY, EMPTY, EMPTY);
 		}
 	}
 }
 
 void print_world(){
-	int i;
+	int i = 0;
 	
 	//print header
 	printf("  ");
-	for(i = 0; i < grid_size; i++){
+	for(; i < grid_size; i++){
 		printf("%d ", i);
 	}
 	printf("\n");
 	
 	//print world
 	for(i = 0; i < grid_size; i++){
-		int j;
+		int j = 0;
 		printf("%d|", i);
-		for(j = 0; j < grid_size; j++){
+		for(; j < grid_size; j++){
 			printf("%c|", world[i][j].type);
 		}
 		printf("\n");
