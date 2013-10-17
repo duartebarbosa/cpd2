@@ -5,6 +5,7 @@
 #define SQUIRREL 's'
 #define ICE 'i'
 #define TREE 't'
+#define SQUIRREL_IN_TREE '$'
 #define EMPTY ' ' //We can just print as an empty space when printing the world
 
 #define MAX 10 //Not sure if required
