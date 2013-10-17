@@ -54,19 +54,13 @@ int main(int argc, char **argv){
 }
 
 void start_world_simulation(){
-	int g = 0;
+	int g = 0, i, j;
 	for(; g < number_of_generations; g++){
 		printf("---- Generation %d ----\n", g);
 		
-		int i,j;
-		
 		//update 'red' cells, think chessboard
 		for(i = 0; i < grid_size; i++){
-			if(i % 2 == 0) {// even row
-				j = 0;
-			} else { //odd row
-				j = 1;
-			}
+			j = (i % 2) ? 1 : 0;
 			for (; j < grid_size; j += 2){
 				update_world_cell(i,j);
 			}
@@ -74,11 +68,7 @@ void start_world_simulation(){
 				
 		//update 'black' cells, think chessboard
 		for(i = 0; i < grid_size; i++){
-			if(i % 2 == 0) {// even row
-				j = 1;
-			} else { //odd row
-				j = 0;
-			}
+			j = (i % 2) ? 0 : 1;
 			for (; j < grid_size; j += 2){
 				update_world_cell(i,j);
 			}
@@ -88,7 +78,7 @@ void start_world_simulation(){
 	}
 }
 
-void update_world_cell(int i, int j){
+inline void update_world_cell(int i, int j){
 	world_cell *cell = &world[i][j];
 	
 	//perfom logic for each cell type
