@@ -10,7 +10,7 @@
 
 #define MAX 10 //Not sure if required
 
-typedef struct _world_cell {
+typedef struct {
 	int type; /* Wolf, squirrel, tree, ice*/
 	int breeding_period;
 	int starvation_period;
