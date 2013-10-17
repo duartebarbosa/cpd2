@@ -116,10 +116,6 @@ void parse_input(char* filename){
 		exit(1);
 	}
 
-	if (fp == NULL){
-		printf("Error reading file %s\n", filename);
-	}
-
 	if (fscanf(fp, "%d\n", &grid_size) == 0){
 		printf("No grid size.");
 		exit(1);
