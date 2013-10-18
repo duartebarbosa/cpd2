@@ -105,7 +105,7 @@ void move(world_cell* cell, world_cell* dest_cell) {
 	} else if((cell->type == SQUIRREL || cell->type == SQUIRREL_IN_TREE) && dest_cell->type == SQUIRREL){
 		/* Squirrel moving to squirrel*/
 		dest_cell->type = cell->type;
-		dest_cell->breeding_period = cell->breeding_period + 1;
+		dest_cell->breeding_period = (cell->breeding_period > dest_cell->breeding_period ? cell->breeding_period : dest_cell->breeding_period)+1; /* Should we increment the breeding period? */
 		dest_cell->starvation_period = cell->starvation_period;
 		
 		/* clean cell */
@@ -115,15 +115,13 @@ void move(world_cell* cell, world_cell* dest_cell) {
 	} else if(dest_cell->type == SQUIRREL_IN_TREE){
 		/* squirrel eating squirrel on tree */
 		dest_cell->type = SQUIRREL_IN_TREE;
-		dest_cell->breeding_period = cell->breeding_period+1;
+		dest_cell->breeding_period = (cell->breeding_period > dest_cell->breeding_period ? cell->breeding_period : dest_cell->breeding_period)+1; /* Should we increment the breeding period? */
 		dest_cell->starvation_period = cell->starvation_period;
 		
 		/* clean cell */
 		cell->type = EMPTY;
 		cell->breeding_period = 0;
 		cell->starvation_period = 0;
-		
-		/* TODO: update squirrel thingies */
 	} else if(cell->type == SQUIRREL_IN_TREE){
 		/* Squirrel leaving tree */
 		dest_cell->type = SQUIRREL;
@@ -162,7 +160,7 @@ void move(world_cell* cell, world_cell* dest_cell) {
 		/* Wolf eating squirrel */
 		dest_cell->type = cell->type;
 		dest_cell->breeding_period = cell->breeding_period;
-		dest_cell->starvation_period = cell->starvation_period;
+		dest_cell->starvation_period += wolf_starvation_period * 1; /* Number of squirrels eaten? */
 		
 		/* clean cell */
 		cell->type = EMPTY;
@@ -188,6 +186,8 @@ void move(world_cell* cell, world_cell* dest_cell) {
 		cell->type = EMPTY;
 		cell->breeding_period = 0;
 		cell->starvation_period = 0;
+	} else {
+		exit(3); 
 	}
 }
 
@@ -208,20 +208,31 @@ void update_world_cell(int i, int j){
 	/* perfom logic for each cell type */
 	switch(cell->type){
 		case WOLF: {
-				int i = 0, possible_cells_count = 0;
+				int i = 0, possible_cells_count = 0, squirrels_found = 0;
+				world_cell** squirrel_cells  = malloc(4*sizeof(world_cell*));
+
 				printf("Checking possible cells for wolf in %d,%d\n", cell->x,cell->y); fflush(stdout);
 				possible_cells = possible_cells_wolf(cell);
 				for(; i < 4; i++){
 					if(possible_cells[i] != NULL){
-						possible_cells_count++;
 						printf("Possible cell for wolf in %d,%d is %d,%d\n", cell->x,cell->y, possible_cells[i]->x,possible_cells[i]->y);
+
+						if(possible_cells[i]->type == SQUIRREL){
+							squirrel_cells[squirrels_found++] = possible_cells[i];
+						}
+						
+						possible_cells_count++;
 					} else {
 						break;
 					}
 				}
 				
-				move(cell, possible_cells[choose_cell(cell->x, cell->y, possible_cells_count)]);
-				
+				if(squirrels_found > 0){
+					move(cell, squirrel_cells[choose_cell(cell->x, cell->y, squirrels_found)]);
+				} else {
+					move(cell, possible_cells[choose_cell(cell->x, cell->y, possible_cells_count)]);
+				}
+			
 				break;
 			}
 		case SQUIRREL: 
