@@ -61,7 +61,7 @@ int main(int argc, char **argv){
 void start_world_simulation(){
 	int g = 0, i, j;
 	for(; g < number_of_generations; g++){
-		printf("---- Generation %d ----\n", g);
+		printf("---- Generation %d ----\n", g+1);
 
 		/* update 'red' cells, think chessboard */
 		for(i = 0; i < grid_size; i++){
@@ -95,7 +95,7 @@ void move(world_cell* cell, world_cell* dest_cell) {
 	if(dest_cell->type==TREE){
 		/* Squirrel climbing tree */
 		dest_cell->type = SQUIRREL_IN_TREE;
-		dest_cell->breeding_period = cell->breeding_period;
+		dest_cell->breeding_period = cell->breeding_period+1;
 		dest_cell->starvation_period = cell->starvation_period;
 		
 		/* clean cell */
@@ -105,33 +105,59 @@ void move(world_cell* cell, world_cell* dest_cell) {
 	} else if((cell->type == SQUIRREL || cell->type == SQUIRREL_IN_TREE) && dest_cell->type == SQUIRREL){
 		/* Squirrel moving to squirrel*/
 		dest_cell->type = cell->type;
-		dest_cell->breeding_period = cell->breeding_period;
+		dest_cell->breeding_period = cell->breeding_period + 1;
 		dest_cell->starvation_period = cell->starvation_period;
 		
 		/* clean cell */
 		cell->type = EMPTY;
 		cell->breeding_period = 0;
 		cell->starvation_period = 0;
+	} else if(dest_cell->type == SQUIRREL_IN_TREE){
+		/* squirrel eating squirrel on tree */
+		dest_cell->type = SQUIRREL_IN_TREE;
+		dest_cell->breeding_period = cell->breeding_period+1;
+		dest_cell->starvation_period = cell->starvation_period;
+		
+		/* clean cell */
+		cell->type = EMPTY;
+		cell->breeding_period = 0;
+		cell->starvation_period = 0;
+		
+		/* TODO: update squirrel thingies */
 	} else if(cell->type == SQUIRREL_IN_TREE){
 		/* Squirrel leaving tree */
 		dest_cell->type = SQUIRREL;
-		dest_cell->breeding_period = cell->breeding_period;
+		dest_cell->breeding_period = cell->breeding_period+1;
 		dest_cell->starvation_period = cell->starvation_period;
 		
 		/* clean cell */
-		cell->type = TREE;
+		if(dest_cell->breeding_period >= squirrel_breeding_period){
+			cell->type = SQUIRREL_IN_TREE;
+			dest_cell->breeding_period = 0;
+		} else {
+			cell->type = TREE;
+		}
+		
 		cell->breeding_period = 0;
 		cell->starvation_period = 0;
+		
 	} else if(cell->type == SQUIRREL){
 		/* simple Squirrel */
 		dest_cell->type = cell->type;
-		dest_cell->breeding_period = cell->breeding_period;
+		dest_cell->breeding_period = cell->breeding_period + 1;
 		dest_cell->starvation_period = cell->starvation_period;
 		
-		/* clean cell */
-		cell->type = EMPTY;
+		/* clean cell or reproduce*/
+		if(dest_cell->breeding_period >= squirrel_breeding_period){
+			cell->type = SQUIRREL;
+			dest_cell->breeding_period = 0;
+		} else {
+			cell->type = EMPTY;
+		}
+		
 		cell->breeding_period = 0;
-		cell->starvation_period = 0;
+		cell->starvation_period = 0;	
+		
 	} else if(cell->type == WOLF && dest_cell->type == SQUIRREL){
 		/* Wolf eating squirrel */
 		dest_cell->type = cell->type;
