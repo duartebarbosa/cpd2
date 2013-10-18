@@ -8,7 +8,6 @@
 #define SQUIRREL_IN_TREE '$'
 #define EMPTY ' ' //We can just print as an empty space when printing the world
 
-#define MAX 10 //Not sure if required
 
 typedef struct {
 	int type; /* Wolf, squirrel, tree, ice*/
@@ -17,7 +16,7 @@ typedef struct {
 } world_cell;
 
 // Functions
-void initialize_world_array();
+void initialize_world_array(int size);
 void parse_input(char* filename);
 void print_world();
 void print_world_stats();
@@ -26,7 +25,7 @@ world_cell create_world_cell(int type, int breeding_period, int starvation_perio
 void update_world_cell(int i, int j);
 
 // Global Variables
-world_cell world[MAX][MAX];
+world_cell **world;
 int wolf_breeding_period;
 int squirrel_breeding_period;
 int wolf_starvation_period;
@@ -40,9 +39,7 @@ int main(int argc, char **argv){
 	squirrel_breeding_period = atoi(argv[3]);
 	wolf_starvation_period = atoi(argv[4]);
 	number_of_generations = atoi(argv[5]);
-	
-	initialize_world_array();
-	
+		
 	parse_input(argv[1]); //Filename
 	
 	print_world_stats();
@@ -113,6 +110,9 @@ void parse_input(char* filename){
 		printf("No grid size.");
 		exit(2);
 	}
+	
+	//We only know the world size here
+	initialize_world_array(grid_size);
 
 	while(fscanf(input,"%d %d %c\n",&i, &j, &type) == 3){ //All arguments read succesfully
 		world[i][j] = create_world_cell(type, 0, 0);
@@ -131,11 +131,13 @@ inline world_cell create_world_cell(int type,int breeding_period,int starvation_
 		return *cell;
 }
 
-void initialize_world_array(){
+void initialize_world_array(int size){
+	world = malloc(size * sizeof(world_cell*));
 	int i = 0;
-	for(; i < MAX; i++){
+	for(; i < size; i++){
+		world[i] = malloc(size * sizeof(world_cell*));
 		int j = 0;
-		for(; j < MAX; j++){
+		for(; j < size; j++){
 			world[i][j] = create_world_cell(EMPTY, EMPTY, EMPTY);
 		}
 	}
