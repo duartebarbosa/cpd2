@@ -17,7 +17,7 @@ test:
 	bash test-me.sh
 
 serial: wolves-squirrels-serial.c
-	$(CC) $(GOODFLAGS) $(TIMER) -fopenmp wolves-squirrels-serial.c -o wolves-squirrels-serial
+	$(CC) $(DEBUGFLAGS) $(TIMER) -fopenmp wolves-squirrels-serial.c -o wolves-squirrels-serial
 
 omp: wolves-squirrels-omp.c
 	$(CC) $(GOODFLAGS) $(TIMER) -fopenmp wolves-squirrels-omp.c -o wolves-squirrels-omp

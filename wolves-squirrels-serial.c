@@ -6,41 +6,44 @@
 #define ICE 'i'
 #define TREE 't'
 #define SQUIRREL_IN_TREE '$'
-#define EMPTY ' ' //We can just print as an empty space when printing the world
+#define EMPTY ' ' /*We can just print as an empty space when printing the world*/
 
 
 typedef struct {
 	int type; /* Wolf, squirrel, tree, ice*/
 	int breeding_period;
 	int starvation_period;
+	int x;
+	int y;
 } world_cell;
 
-// Functions
+/* Functions */
 void initialize_world_array(int size);
 void parse_input(char* filename);
 void print_world();
 void print_world_stats();
 void start_world_simulation();
-world_cell create_world_cell(int type, int breeding_period, int starvation_period);
+world_cell create_world_cell(int type, int breeding_period, int starvation_period, int x, int y);
 void update_world_cell(int i, int j);
+world_cell** possible_cells_squirrel(world_cell* cell);
 
-// Global Variables
+/* Global Variables */
 world_cell **world;
 int wolf_breeding_period;
 int squirrel_breeding_period;
 int wolf_starvation_period;
 int number_of_generations;
-int grid_size; //We could instead malloc the world with this size, instead of MAX.
+int grid_size;
 
 int main(int argc, char **argv){
 
-	// Maybe check for invalid input?
+	/* Maybe check for invalid input? */
 	wolf_breeding_period = atoi(argv[2]);
 	squirrel_breeding_period = atoi(argv[3]);
 	wolf_starvation_period = atoi(argv[4]);
 	number_of_generations = atoi(argv[5]);
 		
-	parse_input(argv[1]); //Filename
+	parse_input(argv[1]); /* Filename */
 	
 	print_world_stats();
 	print_world();
@@ -55,7 +58,7 @@ void start_world_simulation(){
 	for(; g < number_of_generations; g++){
 		printf("---- Generation %d ----\n", g);
 
-		//update 'red' cells, think chessboard
+		/* update 'red' cells, think chessboard */
 		for(i = 0; i < grid_size; i++){
 			j = (i % 2) ? 1 : 0;
 			for (; j < grid_size; j += 2){
@@ -63,7 +66,7 @@ void start_world_simulation(){
 			}
 		}
 				
-		//update 'black' cells, think chessboard
+		/* update 'black' cells, think chessboard */
 		for(i = 0; i < grid_size; i++){
 			j = (i % 2) ? 0 : 1;
 			for (; j < grid_size; j += 2){
@@ -75,24 +78,78 @@ void start_world_simulation(){
 	}
 }
 
-inline void update_world_cell(int i, int j){
+void update_world_cell(int i, int j){
 	world_cell *cell = &world[i][j];
 	
-	//perfom logic for each cell type
+	world_cell** possible_cells;
+
+	/* perfom logic for each cell type */
 	switch(cell->type){
 		case WOLF:
-			//logic goes here
 			break;
-		case SQUIRREL:
-			//logic goes here
-			break;
+		case SQUIRREL: {
+				int i = 0;
+				printf("Checking possible cells for squirrel in %d,%d\n", cell->x,cell->y); fflush(stdout);
+				possible_cells = possible_cells_squirrel(cell);
+				printf("Done.\n"); fflush(stdout);
+				for(; i < 4; i++){
+					if(possible_cells[i] != NULL){
+						printf("Possible cell for squirrel in %d,%d is %d,%d\n", cell->x,cell->y, possible_cells[i]->x,possible_cells[i]->y);
+					}
+				}
+				break;
+			}
 		case ICE:
-			//logic goes here
 			break;
 		case TREE:
-			//logic goes here
 			break;
 	}	
+}
+
+world_cell** possible_cells_squirrel(world_cell* cell){
+	
+	world_cell** possible_cells = malloc(4*sizeof(world_cell*)); /*max possible positions*/
+	int i = 0; /*cell counter*/
+	
+	world_cell* aux_cell;
+	
+	/*check top cell*/
+	if(cell->y != 0){
+		aux_cell = &world[cell->x][cell->y - 1];
+		if(aux_cell->type != WOLF && aux_cell->type != ICE){
+			possible_cells[i] = aux_cell;
+			i++;
+		}
+	}
+	
+	/*check right cell*/
+	if(cell->x != grid_size-1){
+		aux_cell = &world[cell->x + 1][cell->y];
+		if(aux_cell->type != WOLF && aux_cell->type != ICE){
+			possible_cells[i] = aux_cell;
+			i++;
+		}
+	}
+	
+	/*check bottom cell*/
+	if(cell->y != grid_size-1){
+		aux_cell = &world[cell->x][cell->y + 1];
+		if(aux_cell->type != WOLF && aux_cell->type != ICE){
+			possible_cells[i] = aux_cell;
+			i++;
+		}
+	}
+	
+	/*check left cell */
+	if(cell->x != 0){
+		aux_cell = &world[cell->x - 1][cell->y];
+		if(aux_cell->type != WOLF && aux_cell->type != ICE){
+			possible_cells[i] = aux_cell;
+			i++;
+		}
+	}
+	
+	return possible_cells;
 }
 
 void parse_input(char* filename){
@@ -111,34 +168,36 @@ void parse_input(char* filename){
 		exit(2);
 	}
 	
-	//We only know the world size here
+	/*We only know the world size here*/
 	initialize_world_array(grid_size);
 
-	while(fscanf(input,"%d %d %c\n",&i, &j, &type) == 3){ //All arguments read succesfully
-		world[i][j] = create_world_cell(type, 0, 0);
+	while(fscanf(input,"%d %d %c\n",&i, &j, &type) == 3){ /*All arguments read succesfully*/
+		world[i][j] = create_world_cell(type, 0, 0,i,j);
 	}
 
 	if(fclose(input) == EOF)
 		exit(3);
 }
 
-inline world_cell create_world_cell(int type,int breeding_period,int starvation_period){
+world_cell create_world_cell(int type,int breeding_period,int starvation_period, int x, int y){
 		world_cell *cell = (world_cell*)malloc(sizeof(world_cell));
 		cell->type = type;
 		cell->starvation_period = starvation_period;
 		cell->breeding_period = breeding_period;
+		cell->x = x;
+		cell->y = y;
 		
 		return *cell;
 }
 
 void initialize_world_array(int size){
-	world = malloc(size * sizeof(world_cell*));
 	int i = 0;
+	world = malloc(size * sizeof(world_cell*));
 	for(; i < size; i++){
-		world[i] = malloc(size * sizeof(world_cell*));
 		int j = 0;
+		world[i] = malloc(size * sizeof(world_cell*));
 		for(; j < size; j++){
-			world[i][j] = create_world_cell(EMPTY, EMPTY, EMPTY);
+			world[i][j] = create_world_cell(EMPTY, EMPTY, EMPTY, i, j);
 		}
 	}
 }
@@ -146,19 +205,19 @@ void initialize_world_array(int size){
 void print_world(){
 	int i = 0;
 	
-	//print header
+	/*print header*/
 	printf("  ");
 	for(; i < grid_size; i++){
 		printf("%d ", i);
 	}
 	printf("\n");
 	
-	//print world
+	/*print world*/
 	for(i = 0; i < grid_size; i++){
 		int j = 0;
 		printf("%d|", i);
 		for(; j < grid_size; j++){
-			printf("%c|", world[i][j].type);
+			printf("%c|", world[j][i].type);
 		}
 		printf("\n");
 	}
