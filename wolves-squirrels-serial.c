@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define WOLF 'w'
 #define SQUIRREL 's'
@@ -26,6 +27,7 @@ void start_world_simulation();
 world_cell create_world_cell(int type, int breeding_period, int starvation_period, int x, int y);
 void update_world_cell(int i, int j);
 world_cell** possible_cells_squirrel(world_cell* cell);
+world_cell** possible_cells_wolf(world_cell* cell);
 
 /* Global Variables */
 world_cell **world;
@@ -85,13 +87,21 @@ void update_world_cell(int i, int j){
 
 	/* perfom logic for each cell type */
 	switch(cell->type){
-		case WOLF:
-			break;
+		case WOLF: {
+				int i = 0;
+				printf("Checking possible cells for wolf in %d,%d\n", cell->x,cell->y); fflush(stdout);
+				possible_cells = possible_cells_wolf(cell);
+				for(; i < 4; i++){
+					if(possible_cells[i] != NULL){
+						printf("Possible cell for wolf in %d,%d is %d,%d\n", cell->x,cell->y, possible_cells[i]->x,possible_cells[i]->y);
+					}
+				}
+				break;
+			}
 		case SQUIRREL: {
 				int i = 0;
 				printf("Checking possible cells for squirrel in %d,%d\n", cell->x,cell->y); fflush(stdout);
 				possible_cells = possible_cells_squirrel(cell);
-				printf("Done.\n"); fflush(stdout);
 				for(; i < 4; i++){
 					if(possible_cells[i] != NULL){
 						printf("Possible cell for squirrel in %d,%d is %d,%d\n", cell->x,cell->y, possible_cells[i]->x,possible_cells[i]->y);
@@ -108,11 +118,12 @@ void update_world_cell(int i, int j){
 
 world_cell** possible_cells_squirrel(world_cell* cell){
 	
-	world_cell** possible_cells = malloc(4*sizeof(world_cell*)); /*max possible positions*/
+	world_cell** possible_cells = malloc(4*sizeof(world_cell*)); /*max possible positions*/	
 	int i = 0; /*cell counter*/
-	
 	world_cell* aux_cell;
-	
+
+	memset(possible_cells, 0, 4*sizeof(world_cell*));
+			
 	/*check top cell*/
 	if(cell->y != 0){
 		aux_cell = &world[cell->x][cell->y - 1];
@@ -144,6 +155,53 @@ world_cell** possible_cells_squirrel(world_cell* cell){
 	if(cell->x != 0){
 		aux_cell = &world[cell->x - 1][cell->y];
 		if(aux_cell->type != WOLF && aux_cell->type != ICE){
+			possible_cells[i] = aux_cell;
+			i++;
+		}
+	}
+	
+	return possible_cells;
+}
+
+world_cell** possible_cells_wolf(world_cell* cell){
+	
+	world_cell** possible_cells = malloc(4*sizeof(world_cell*)); /*max possible positions*/	
+	int i = 0; /*cell counter*/
+	world_cell* aux_cell;
+
+	memset(possible_cells, 0, 4*sizeof(world_cell*));
+	
+	/*check top cell*/
+	if(cell->y != 0){
+		aux_cell = &world[cell->x][cell->y - 1];
+		if(aux_cell->type != TREE && aux_cell->type != ICE){
+			possible_cells[i] = aux_cell;
+			i++;
+		}
+	}
+	
+	/*check right cell*/
+	if(cell->x != grid_size-1){
+		aux_cell = &world[cell->x + 1][cell->y];
+		if(aux_cell->type != TREE && aux_cell->type != ICE){
+			possible_cells[i] = aux_cell;
+			i++;
+		}
+	}
+	
+	/*check bottom cell*/
+	if(cell->y != grid_size-1){
+		aux_cell = &world[cell->x][cell->y + 1];
+		if(aux_cell->type != TREE && aux_cell->type != ICE){
+			possible_cells[i] = aux_cell;
+			i++;
+		}
+	}
+	
+	/*check left cell */
+	if(cell->x != 0){
+		aux_cell = &world[cell->x - 1][cell->y];
+		if(aux_cell->type != TREE && aux_cell->type != ICE){
 			possible_cells[i] = aux_cell;
 			i++;
 		}
