@@ -96,41 +96,44 @@ void cleanup_cell(world_cell* cell){
 }
 
 void move_wolf(world_cell* cell, world_cell* dest_cell) {
-	if(dest_cell->type == SQUIRREL){
-		/* Wolf eating squirrel */
-		dest_cell->type = cell->type;
-		dest_cell->breeding_period = cell->breeding_period;
-		dest_cell->starvation_period += wolf_starvation_period * 1; /* Number of squirrels eaten? */
-		
-		/* clean cell */		
-		cleanup_cell(cell);
-	} else if(dest_cell->type == WOLF){
-		/* Wolf fighting wolf */
-		dest_cell->type = cell->type;
-		
-		if(cell->starvation_period == dest_cell->starvation_period){
-			dest_cell->breeding_period = (cell->breeding_period > dest_cell->breeding_period ? cell->breeding_period : dest_cell->breeding_period)+1; /*FIXME: Should we increment the breeding period? */
-			/* same starvation */
-		} else {
-			dest_cell->breeding_period = (cell->starvation_period > dest_cell->starvation_period ? cell->breeding_period : dest_cell->breeding_period)+1; /*FIXME: Should we increment the breeding period? */
-			dest_cell->starvation_period = (cell->starvation_period > dest_cell->starvation_period ? cell->starvation_period : dest_cell->starvation_period)+1;
-		}
-		
-		/* clean cell */		
-		cleanup_cell(cell);
-	} else {
-		/* simple Wolf */
-		dest_cell->type = cell->type;
-		dest_cell->breeding_period = cell->breeding_period+1;
-		dest_cell->starvation_period = cell->starvation_period-1;
-		
-		/* clean cell or reproduce*/
-		if(dest_cell->breeding_period >= wolf_breeding_period){
-			cell->type = WOLF;
-			cell->breeding_period = 0;
-			cell->starvation_period = wolf_starvation_period;
-		} else
+	switch(dest_cell->type){
+		case SQUIRREL:
+			/* Wolf eating squirrel */
+			dest_cell->type = cell->type;
+			dest_cell->breeding_period = cell->breeding_period;
+			dest_cell->starvation_period += wolf_starvation_period * 1; /* Number of squirrels eaten? */
+			
+			/* clean cell */		
 			cleanup_cell(cell);
+			break;
+		case WOLF:
+			/* Wolf fighting wolf */
+			dest_cell->type = cell->type;
+			
+			if(cell->starvation_period == dest_cell->starvation_period){
+				dest_cell->breeding_period = (cell->breeding_period > dest_cell->breeding_period ? cell->breeding_period : dest_cell->breeding_period)+1; /*FIXME: Should we increment the breeding period? */
+				/* same starvation */
+			} else {
+				dest_cell->breeding_period = (cell->starvation_period > dest_cell->starvation_period ? cell->breeding_period : dest_cell->breeding_period)+1; /*FIXME: Should we increment the breeding period? */
+				dest_cell->starvation_period = (cell->starvation_period > dest_cell->starvation_period ? cell->starvation_period : dest_cell->starvation_period)+1;
+			}
+			
+			/* clean cell */		
+			cleanup_cell(cell);
+			break;
+		default:
+			/* simple Wolf */
+			dest_cell->type = cell->type;
+			dest_cell->breeding_period = cell->breeding_period+1;
+			dest_cell->starvation_period = cell->starvation_period-1;
+			
+			/* clean cell or reproduce*/
+			if(dest_cell->breeding_period >= wolf_breeding_period){
+				cell->type = WOLF;
+				cell->breeding_period = 0;
+				cell->starvation_period = wolf_starvation_period;
+			} else
+				cleanup_cell(cell);
 	}
 }
 
