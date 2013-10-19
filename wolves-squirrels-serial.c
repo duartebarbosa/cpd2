@@ -207,9 +207,8 @@ void update_world_cell(int x, int y){
 	world_cell** possible_cells;
 	int i = 0, possible_cells_count = 0;
 
-	if(cell->moved){
+	if(cell->moved)
 		return;
-	}
 
 	/* perfom logic for each cell type */
 	switch(cell->type){
@@ -240,25 +239,24 @@ void update_world_cell(int x, int y){
 				break;
 			}
 		case SQUIRREL: 
-		case SQUIRREL_IN_TREE: {
-				printf("Checking possible cells for squirrel in %d,%d\n", cell->x,cell->y);
-				possible_cells = retrieve_possible_cells(cell);
-				for(; i < 4; i++){
-					if(possible_cells[i] == NULL)
-						break;
+		case SQUIRREL_IN_TREE:
+			printf("Checking possible cells for squirrel in %d,%d\n", cell->x,cell->y);
+			possible_cells = retrieve_possible_cells(cell);
+			for(; i < 4; i++){
+				if(possible_cells[i] == NULL)
+					break;
 
-					possible_cells_count++;
-					printf("Possible cell for squirrel in %d,%d is %d,%d\n", cell->x,cell->y, possible_cells[i]->x,possible_cells[i]->y);
-				}
-				
-				move(cell, possible_cells[choose_cell(cell->x, cell->y, possible_cells_count)]);
-				break;
+				possible_cells_count++;
+				printf("Possible cell for squirrel in %d,%d is %d,%d\n", cell->x,cell->y, possible_cells[i]->x,possible_cells[i]->y);
 			}
+
+			move(cell, possible_cells[choose_cell(cell->x, cell->y, possible_cells_count)]);
+			break;
 		case ICE:
 		case TREE:
 		default:
 			break;
-	}	
+	}
 }
 
 void add_cell(world_cell* aux_cell, world_cell** possible_cells, int bad_type){
