@@ -266,7 +266,7 @@ void update_world_cell(int i, int j){
 	}	
 }
 
-void add_cell(world_cell* aux_cell, int i, world_cell** possible_cells){
+void add_cell_squirrel(world_cell* aux_cell, int i, world_cell** possible_cells){
 	if(aux_cell->type != WOLF && aux_cell->type != ICE){
 		possible_cells[i] = aux_cell;
 	}
@@ -284,28 +284,34 @@ world_cell** possible_cells_squirrel(world_cell* cell){
 	/*check top cell*/
 	if(cell->y != 0){
 		aux_cell = &world[cell->x][cell->y - 1];
-		add_cell(aux_cell, i++, possible_cells);
+		add_cell_squirrel(aux_cell, i++, possible_cells);
 	}
 	
 	/*check right cell*/
 	if(cell->x != grid_size-1){
 		aux_cell = &world[cell->x + 1][cell->y];
-		add_cell(aux_cell, i++, possible_cells);
+		add_cell_squirrel(aux_cell, i++, possible_cells);
 	}
 	
 	/*check bottom cell*/
 	if(cell->y != grid_size-1){
 		aux_cell = &world[cell->x][cell->y + 1];
-		add_cell(aux_cell, i++, possible_cells);
+		add_cell_squirrel(aux_cell, i++, possible_cells);
 	}
 	
 	/*check left cell */
 	if(cell->x != 0){
 		aux_cell = &world[cell->x - 1][cell->y];
-		add_cell(aux_cell, i++, possible_cells);
+		add_cell_squirrel(aux_cell, i++, possible_cells);
 	}
 	
 	return possible_cells;
+}
+
+void add_cell_wolf(world_cell* aux_cell, int i, world_cell** possible_cells){
+	if(aux_cell->type != TREE && aux_cell->type != ICE){
+		possible_cells[i] = aux_cell;
+	}
 }
 
 world_cell** possible_cells_wolf(world_cell* cell){
@@ -319,17 +325,13 @@ world_cell** possible_cells_wolf(world_cell* cell){
 	/*check top cell*/
 	if(cell->y != 0){
 		aux_cell = &world[cell->x][cell->y - 1];
-		if(aux_cell->type != TREE && aux_cell->type != ICE){
-			possible_cells[i++] = aux_cell;
-		}
+		add_cell_wolf(aux_cell, i++, possible_cells);
 	}
 	
 	/*check right cell*/
 	if(cell->x != grid_size-1){
 		aux_cell = &world[cell->x + 1][cell->y];
-		if(aux_cell->type != TREE && aux_cell->type != ICE){
-			possible_cells[i++] = aux_cell;
-		}
+		add_cell_wolf(aux_cell, i++, possible_cells);
 	}
 	
 	/*check bottom cell*/
@@ -343,9 +345,7 @@ world_cell** possible_cells_wolf(world_cell* cell){
 	/*check left cell */
 	if(cell->x != 0){
 		aux_cell = &world[cell->x - 1][cell->y];
-		if(aux_cell->type != TREE && aux_cell->type != ICE){
-			possible_cells[i++] = aux_cell;
-		}
+		add_cell_wolf(aux_cell, i++, possible_cells);
 	}
 	
 	return possible_cells;
