@@ -275,40 +275,30 @@ world_cell** retrieve_possible_cells(world_cell* cell){
 	
 	world_cell** possible_cells = malloc(4*sizeof(world_cell*)); /*max possible positions*/
 	world_cell** tmp_cell = possible_cells;
-	world_cell* aux_cell;
 	int bad_type;
 
-	memset(possible_cells, 0, 4*sizeof(world_cell*));
+	memset(possible_cells, 0, 4 * sizeof(world_cell*));
 
 	if(cell->type == SQUIRREL)
 		bad_type = WOLF;
 	else
 		bad_type = TREE;
 
-
 	/*check top cell*/
-	if(cell->y != 0){
-		aux_cell = &world[cell->x][cell->y - 1];
-		add_cell(aux_cell, tmp_cell++, bad_type);
-	}
+	if(cell->y != 0)
+		add_cell(&world[cell->x][cell->y - 1], tmp_cell++, bad_type);
 	
 	/*check right cell*/
-	if(cell->x != grid_size-1){
-		aux_cell = &world[cell->x + 1][cell->y];
-		add_cell(aux_cell, tmp_cell++, bad_type);
-	}
+	if(cell->x != grid_size-1)
+		add_cell(&world[cell->x + 1][cell->y], tmp_cell++, bad_type);
 	
 	/*check bottom cell*/
-	if(cell->y != grid_size-1){
-		aux_cell = &world[cell->x][cell->y + 1];
-		add_cell(aux_cell, tmp_cell++, bad_type);
-	}
+	if(cell->y != grid_size-1)
+		add_cell(&world[cell->x][cell->y + 1], tmp_cell++, bad_type);
 	
 	/*check left cell */
-	if(cell->x != 0){
-		aux_cell = &world[cell->x - 1][cell->y];
-		add_cell(aux_cell, tmp_cell++, bad_type);
-	}
+	if(cell->x != 0)
+		add_cell(&world[cell->x - 1][cell->y], tmp_cell++, bad_type);
 	
 	return possible_cells;
 }
