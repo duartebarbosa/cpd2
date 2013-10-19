@@ -344,6 +344,10 @@ world_cell** possible_cells_wolf(world_cell* cell){
 	well, it kinda works. the only difference between the logs is the "Possible cell for wolf in 4,2 is 3,2"
 	line in the first generation (the last possibility of that wolf). any ideas? */
 		aux_cell = &world[cell->x][cell->y + 1];
+		/*if(aux_cell->type != TREE && aux_cell->type != ICE){
+			possible_cells[i++] = aux_cell;
+			tmp_cell++;
+		}*/
 		add_cell_wolf(aux_cell, tmp_cell++);
 	}
 	
