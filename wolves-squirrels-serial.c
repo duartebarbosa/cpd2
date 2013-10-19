@@ -342,7 +342,7 @@ void parse_input(char* filename){
 }
 
 world_cell create_world_cell(int type,int breeding_period,int starvation_period, int x, int y){
-		world_cell *cell = (world_cell*)malloc(sizeof(world_cell));
+		world_cell *cell = malloc(sizeof(world_cell));
 		cell->type = type;
 		cell->starvation_period = starvation_period;
 		cell->breeding_period = breeding_period;
