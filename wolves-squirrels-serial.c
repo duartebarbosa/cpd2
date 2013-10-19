@@ -9,6 +9,8 @@
 #define SQUIRREL_IN_TREE '$'
 #define EMPTY ' ' /*We can just print as an empty space when printing the world*/
 
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+
 
 typedef struct {
 	int type; /* Wolf, squirrel, tree, ice*/
@@ -65,29 +67,32 @@ void start_world_simulation(){
 
 		/* update 'red' cells, think chessboard */
 		for(i = 0; i < grid_size; i++){
-			j = (i % 2) ? 1 : 0;
-			for (; j < grid_size; j += 2){
+			for (j = (i % 2) ? 1 : 0; j < grid_size; j += 2){
 				update_world_cell(i,j);
 			}
 		}
 				
 		/* update 'black' cells, think chessboard */
 		for(i = 0; i < grid_size; i++){
-			j = (i % 2) ? 0 : 1;
-			for (; j < grid_size; j += 2){
+			for (j = (i % 2) ? 0 : 1; j < grid_size; j += 2){
 				update_world_cell(i,j);
 			}
 		}
 		
 		for(i = 0; i < grid_size; i++){
-			j = 0;
-			for (; j < grid_size; j ++){
+			for (j = 0; j < grid_size; j ++){
 				world[i][j].moved = 0;
 			}
 		}
 		
 		print_world();
 	}
+}
+
+void cleanup_cell(world_cell* cell){
+	cell->type = EMPTY;
+	cell->breeding_period = 0;
+	cell->starvation_period = 0;
 }
 
 void move(world_cell* cell, world_cell* dest_cell) {
@@ -97,31 +102,25 @@ void move(world_cell* cell, world_cell* dest_cell) {
 		dest_cell->type = SQUIRREL_IN_TREE;
 		dest_cell->breeding_period = cell->breeding_period+1;
 		dest_cell->starvation_period = cell->starvation_period;
-		
-		/* clean cell */
-		cell->type = EMPTY;
-		cell->breeding_period = 0;
-		cell->starvation_period = 0;
+
+		/* clean cell */		
+		cleanup_cell(cell);
 	} else if((cell->type == SQUIRREL || cell->type == SQUIRREL_IN_TREE) && dest_cell->type == SQUIRREL){
 		/* Squirrel moving to squirrel*/
 		dest_cell->type = cell->type;
-		dest_cell->breeding_period = (cell->breeding_period > dest_cell->breeding_period ? cell->breeding_period : dest_cell->breeding_period)+1; /*FIXME: Should we increment the breeding period? */
+		dest_cell->breeding_period = MAX(cell->breeding_period, dest_cell->breeding_period)+1; /*FIXME: Should we increment the breeding period? */
 		dest_cell->starvation_period = cell->starvation_period;
 		
-		/* clean cell */
-		cell->type = EMPTY;
-		cell->breeding_period = 0;
-		cell->starvation_period = 0;
+		/* clean cell */		
+		cleanup_cell(cell);
 	} else if(dest_cell->type == SQUIRREL_IN_TREE){
 		/* squirrel eating squirrel on tree */
 		dest_cell->type = SQUIRREL_IN_TREE;
-		dest_cell->breeding_period = (cell->breeding_period > dest_cell->breeding_period ? cell->breeding_period : dest_cell->breeding_period)+1; /* Should we increment the breeding period? */
+		dest_cell->breeding_period = MAX(cell->breeding_period, dest_cell->breeding_period)+1; /*FIXME: Should we increment the breeding period? */
 		dest_cell->starvation_period = cell->starvation_period;
 		
-		/* clean cell */
-		cell->type = EMPTY;
-		cell->breeding_period = 0;
-		cell->starvation_period = 0;
+		/* clean cell */		
+		cleanup_cell(cell);
 	} else if(cell->type == SQUIRREL_IN_TREE){
 		/* Squirrel leaving tree */
 		dest_cell->type = SQUIRREL;
@@ -155,17 +154,15 @@ void move(world_cell* cell, world_cell* dest_cell) {
 		
 		cell->breeding_period = 0;
 		cell->starvation_period = 0;	
-		
+
 	} else if(cell->type == WOLF && dest_cell->type == SQUIRREL){
 		/* Wolf eating squirrel */
 		dest_cell->type = cell->type;
 		dest_cell->breeding_period = cell->breeding_period;
 		dest_cell->starvation_period += wolf_starvation_period * 1; /* Number of squirrels eaten? */
 		
-		/* clean cell */
-		cell->type = EMPTY;
-		cell->breeding_period = 0;
-		cell->starvation_period = 0;
+		/* clean cell */		
+		cleanup_cell(cell);
 	} else if(cell->type == WOLF && dest_cell->type == WOLF){
 		/* Wolf fighting wolf */
 		dest_cell->type = cell->type;
@@ -178,10 +175,8 @@ void move(world_cell* cell, world_cell* dest_cell) {
 			dest_cell->starvation_period = (cell->starvation_period > dest_cell->starvation_period ? cell->starvation_period : dest_cell->starvation_period)+1;
 		}
 		
-		/* clean cell */
-		cell->type = EMPTY;
-		cell->breeding_period = 0;
-		cell->starvation_period = 0;
+		/* clean cell */		
+		cleanup_cell(cell);
 	} else if(cell->type == WOLF){
 		/* simple Wolf */
 		dest_cell->type = cell->type;
@@ -194,9 +189,7 @@ void move(world_cell* cell, world_cell* dest_cell) {
 			cell->breeding_period = 0;
 			cell->starvation_period = wolf_starvation_period;
 		} else {
-			cell->type = EMPTY;
-			cell->breeding_period = 0;
-			cell->starvation_period = 0;
+			cleanup_cell(cell);
 		}
 
 	} else {
@@ -224,7 +217,7 @@ void update_world_cell(int i, int j){
 				int i = 0, possible_cells_count = 0, squirrels_found = 0;
 				world_cell** squirrel_cells  = malloc(4*sizeof(world_cell*));
 
-				printf("Checking possible cells for wolf in %d,%d\n", cell->x,cell->y); fflush(stdout);
+				printf("Checking possible cells for wolf in %d,%d\n", cell->x,cell->y);
 				possible_cells = possible_cells_wolf(cell);
 				for(; i < 4; i++){
 					if(possible_cells[i] != NULL){
@@ -251,7 +244,7 @@ void update_world_cell(int i, int j){
 		case SQUIRREL: 
 		case SQUIRREL_IN_TREE: {
 				int i = 0, possible_cells_count = 0;
-				printf("Checking possible cells for squirrel in %d,%d\n", cell->x,cell->y); fflush(stdout);
+				printf("Checking possible cells for squirrel in %d,%d\n", cell->x,cell->y);
 				possible_cells = possible_cells_squirrel(cell);
 				for(; i < 4; i++){
 					if(possible_cells[i] != NULL){
@@ -267,101 +260,97 @@ void update_world_cell(int i, int j){
 				break;
 			}
 		case ICE:
-			break;
 		case TREE:
+		default:
 			break;
 	}	
 }
 
+void add_cell_squirrel(world_cell* aux_cell, world_cell** possible_cells){
+	if(aux_cell->type != WOLF && aux_cell->type != ICE){
+		*possible_cells = aux_cell;
+	}
+}
+
+
 world_cell** possible_cells_squirrel(world_cell* cell){
 	
-	world_cell** possible_cells = malloc(4*sizeof(world_cell*)); /*max possible positions*/	
-	int i = 0; /*cell counter*/
+	world_cell** possible_cells = malloc(4*sizeof(world_cell*)); /*max possible positions*/
+	world_cell** tmp_cell = possible_cells;
 	world_cell* aux_cell;
 
 	memset(possible_cells, 0, 4*sizeof(world_cell*));
-			
+
 	/*check top cell*/
 	if(cell->y != 0){
 		aux_cell = &world[cell->x][cell->y - 1];
-		if(aux_cell->type != WOLF && aux_cell->type != ICE){
-			possible_cells[i] = aux_cell;
-			i++;
-		}
+		add_cell_squirrel(aux_cell, tmp_cell++);
 	}
 	
 	/*check right cell*/
 	if(cell->x != grid_size-1){
 		aux_cell = &world[cell->x + 1][cell->y];
-		if(aux_cell->type != WOLF && aux_cell->type != ICE){
-			possible_cells[i] = aux_cell;
-			i++;
-		}
+		add_cell_squirrel(aux_cell, tmp_cell++);
 	}
 	
 	/*check bottom cell*/
 	if(cell->y != grid_size-1){
 		aux_cell = &world[cell->x][cell->y + 1];
-		if(aux_cell->type != WOLF && aux_cell->type != ICE){
-			possible_cells[i] = aux_cell;
-			i++;
-		}
+		add_cell_squirrel(aux_cell, tmp_cell++);
 	}
 	
 	/*check left cell */
 	if(cell->x != 0){
 		aux_cell = &world[cell->x - 1][cell->y];
-		if(aux_cell->type != WOLF && aux_cell->type != ICE){
-			possible_cells[i] = aux_cell;
-			i++;
-		}
+		add_cell_squirrel(aux_cell, tmp_cell++);
 	}
 	
 	return possible_cells;
 }
 
+void add_cell_wolf(world_cell* aux_cell, world_cell** possible_cells){
+	if(aux_cell->type != TREE && aux_cell->type != ICE){
+		*possible_cells = aux_cell;
+	}
+}
+
 world_cell** possible_cells_wolf(world_cell* cell){
 	
 	world_cell** possible_cells = malloc(4*sizeof(world_cell*)); /*max possible positions*/	
-	int i = 0; /*cell counter*/
+	world_cell** tmp_cell = possible_cells;
+	/*int i = 0; FIXME: leftovers from previous code.*/
 	world_cell* aux_cell;
 
 	memset(possible_cells, 0, 4*sizeof(world_cell*));
 	
 	/*check top cell*/
 	if(cell->y != 0){
+		/*i++;*/
 		aux_cell = &world[cell->x][cell->y - 1];
-		if(aux_cell->type != TREE && aux_cell->type != ICE){
-			possible_cells[i] = aux_cell;
-			i++;
-		}
+		add_cell_wolf(aux_cell, tmp_cell++);
 	}
 	
 	/*check right cell*/
 	if(cell->x != grid_size-1){
+		/*i++;*/
 		aux_cell = &world[cell->x + 1][cell->y];
-		if(aux_cell->type != TREE && aux_cell->type != ICE){
-			possible_cells[i] = aux_cell;
-			i++;
-		}
+		add_cell_wolf(aux_cell, tmp_cell++);
 	}
 	
 	/*check bottom cell*/
 	if(cell->y != grid_size-1){
+	/*FIXME: dafuq my awesome refactoring doesn't work in this case can't find why. is this magic?
+	-----
+	well, it kinda works. the only difference between the logs is the "Possible cell for wolf in 4,2 is 3,2"
+	line in the first generation (the last possibility of that wolf). any ideas? */
 		aux_cell = &world[cell->x][cell->y + 1];
-		if(aux_cell->type != TREE && aux_cell->type != ICE){
-			possible_cells[i] = aux_cell;
-			i++;
-		}
+		add_cell_wolf(aux_cell, tmp_cell++);
 	}
 	
 	/*check left cell */
 	if(cell->x != 0){
 		aux_cell = &world[cell->x - 1][cell->y];
-		if(aux_cell->type != TREE && aux_cell->type != ICE){
-			possible_cells[i] = aux_cell;
-			i++;
-		}
+		add_cell_wolf(aux_cell, tmp_cell++);
 	}
 	
 	return possible_cells;
