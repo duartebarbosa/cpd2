@@ -63,7 +63,7 @@ int main(int argc, char **argv){
 void start_world_simulation(){
 	int g = 0, i, j;
 	for(; g < number_of_generations; g++){
-		printf("---- Generation %d ----\n", g+1);
+		printf("---- Generation %d ----\n", g + 1);
 
 		/* update 'red' cells, think chessboard */
 		for(i = 0; i < grid_size; i++){
@@ -111,10 +111,10 @@ void move_wolf(world_cell* cell, world_cell* dest_cell) {
 			dest_cell->type = cell->type;
 			/* same starvation */			
 			if(cell->starvation_period == dest_cell->starvation_period){
-				dest_cell->breeding_period = (cell->breeding_period > dest_cell->breeding_period ? cell->breeding_period : dest_cell->breeding_period)+1; /*FIXME: Should we increment the breeding period? */
+				dest_cell->breeding_period = (cell->breeding_period > dest_cell->breeding_period ? cell->breeding_period : dest_cell->breeding_period) + 1; /*FIXME: Should we increment the breeding period? */
 			} else {
-				dest_cell->breeding_period = (cell->starvation_period > dest_cell->starvation_period ? cell->breeding_period : dest_cell->breeding_period)+1; /*FIXME: Should we increment the breeding period? */
-				dest_cell->starvation_period = (cell->starvation_period > dest_cell->starvation_period ? cell->starvation_period : dest_cell->starvation_period)+1;
+				dest_cell->breeding_period = (cell->starvation_period > dest_cell->starvation_period ? cell->breeding_period : dest_cell->breeding_period) + 1; /*FIXME: Should we increment the breeding period? */
+				dest_cell->starvation_period = (cell->starvation_period > dest_cell->starvation_period ? cell->starvation_period : dest_cell->starvation_period) + 1;
 			}
 			
 			/* clean cell */		
@@ -123,8 +123,8 @@ void move_wolf(world_cell* cell, world_cell* dest_cell) {
 		default:
 			/* simple Wolf */
 			dest_cell->type = cell->type;
-			dest_cell->breeding_period = cell->breeding_period+1;
-			dest_cell->starvation_period = cell->starvation_period-1;
+			dest_cell->breeding_period = cell->breeding_period + 1;
+			dest_cell->starvation_period = cell->starvation_period - 1;
 			
 			/* clean cell or reproduce*/
 			if(dest_cell->breeding_period >= wolf_breeding_period){
@@ -141,7 +141,7 @@ void move_squirrel(world_cell* cell, world_cell* dest_cell) {
 	if(dest_cell->type == TREE){
 		/* Squirrel climbing tree */
 		dest_cell->type = SQUIRREL_IN_TREE;
-		dest_cell->breeding_period = cell->breeding_period+1;
+		dest_cell->breeding_period = cell->breeding_period + 1;
 
 		/* clean cell */
 		cleanup_cell(cell);
@@ -162,7 +162,7 @@ void move_squirrel(world_cell* cell, world_cell* dest_cell) {
 	} else if(cell->type == SQUIRREL_IN_TREE){
 		/* Squirrel leaving tree */
 		dest_cell->type = SQUIRREL;
-		dest_cell->breeding_period = cell->breeding_period+1;
+		dest_cell->breeding_period = cell->breeding_period + 1;
 		
 		/* clean cell */
 		cleanup_cell(cell);
@@ -179,14 +179,12 @@ void move_squirrel(world_cell* cell, world_cell* dest_cell) {
 		dest_cell->breeding_period = cell->breeding_period + 1;
 		
 		/* clean cell or reproduce*/
+		cleanup_cell(cell);
 		if(dest_cell->breeding_period >= squirrel_breeding_period){
 			cell->type = SQUIRREL;
 			dest_cell->breeding_period = 0;
 		} else
 			cell->type = EMPTY;
-		
-		cell->breeding_period = 0;
-		cell->starvation_period = 0;
 
 	}
 }
