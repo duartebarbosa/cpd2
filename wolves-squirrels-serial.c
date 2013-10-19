@@ -41,6 +41,7 @@ int wolf_starvation_period;
 int number_of_generations;
 int grid_size;
 
+
 int main(int argc, char **argv){
 
 	/* Maybe check for invalid input? */
@@ -55,7 +56,7 @@ int main(int argc, char **argv){
 	print_world();
 	
 	start_world_simulation();
-	
+
 	return 0;
 }
 
@@ -219,17 +220,15 @@ void update_world_cell(int i, int j){
 				printf("Checking possible cells for wolf in %d,%d\n", cell->x,cell->y);
 				possible_cells = retrieve_possible_cells(cell);
 				for(; i < 4; i++){
-					if(possible_cells[i] != NULL){
-						printf("Possible cell for wolf in %d,%d is %d,%d\n", cell->x,cell->y, possible_cells[i]->x,possible_cells[i]->y);
-
-						if(possible_cells[i]->type == SQUIRREL){
-							squirrel_cells[squirrels_found++] = possible_cells[i];
-						}
-						
-						possible_cells_count++;
-					} else {
+					if(possible_cells[i] == NULL)
 						break;
-					}
+
+					printf("Possible cell for wolf in %d,%d is %d,%d\n", cell->x,cell->y, possible_cells[i]->x,possible_cells[i]->y);
+
+					if(possible_cells[i]->type == SQUIRREL)
+						squirrel_cells[squirrels_found++] = possible_cells[i];
+
+					possible_cells_count++;
 				}
 				
 				if(squirrels_found > 0){
@@ -246,12 +245,11 @@ void update_world_cell(int i, int j){
 				printf("Checking possible cells for squirrel in %d,%d\n", cell->x,cell->y);
 				possible_cells = retrieve_possible_cells(cell);
 				for(; i < 4; i++){
-					if(possible_cells[i] != NULL){
-						possible_cells_count++;
-						printf("Possible cell for squirrel in %d,%d is %d,%d\n", cell->x,cell->y, possible_cells[i]->x,possible_cells[i]->y);
-					} else {
+					if(possible_cells[i] == NULL)
 						break;
-					}
+
+					possible_cells_count++;
+					printf("Possible cell for squirrel in %d,%d is %d,%d\n", cell->x,cell->y, possible_cells[i]->x,possible_cells[i]->y);
 				}
 				
 				move(cell, possible_cells[choose_cell(cell->x, cell->y, possible_cells_count)]);
