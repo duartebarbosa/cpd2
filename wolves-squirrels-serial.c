@@ -29,8 +29,7 @@ void print_world_stats();
 void start_world_simulation();
 world_cell create_world_cell(int type, int breeding_period, int starvation_period, int x, int y);
 void update_world_cell(int i, int j);
-world_cell** possible_cells_squirrel(world_cell* cell);
-world_cell** possible_cells_wolf(world_cell* cell);
+world_cell** retrieve_possible_cells(world_cell* cell);
 void move(world_cell* cell, world_cell* dest_cell);
 int choose_cell(int i, int j, int p);
 
@@ -218,7 +217,7 @@ void update_world_cell(int i, int j){
 				world_cell** squirrel_cells  = malloc(4*sizeof(world_cell*));
 
 				printf("Checking possible cells for wolf in %d,%d\n", cell->x,cell->y);
-				possible_cells = possible_cells_wolf(cell);
+				possible_cells = retrieve_possible_cells(cell);
 				for(; i < 4; i++){
 					if(possible_cells[i] != NULL){
 						printf("Possible cell for wolf in %d,%d is %d,%d\n", cell->x,cell->y, possible_cells[i]->x,possible_cells[i]->y);
@@ -245,7 +244,7 @@ void update_world_cell(int i, int j){
 		case SQUIRREL_IN_TREE: {
 				int i = 0, possible_cells_count = 0;
 				printf("Checking possible cells for squirrel in %d,%d\n", cell->x,cell->y);
-				possible_cells = possible_cells_squirrel(cell);
+				possible_cells = retrieve_possible_cells(cell);
 				for(; i < 4; i++){
 					if(possible_cells[i] != NULL){
 						possible_cells_count++;
@@ -266,95 +265,50 @@ void update_world_cell(int i, int j){
 	}	
 }
 
-void add_cell_squirrel(world_cell* aux_cell, world_cell** possible_cells){
-	if(aux_cell->type != WOLF && aux_cell->type != ICE){
+void add_cell(world_cell* aux_cell, world_cell** possible_cells, int bad_type){
+	if(aux_cell->type != bad_type && aux_cell->type != ICE){
 		*possible_cells = aux_cell;
 	}
 }
 
 
-world_cell** possible_cells_squirrel(world_cell* cell){
+world_cell** retrieve_possible_cells(world_cell* cell){
 	
 	world_cell** possible_cells = malloc(4*sizeof(world_cell*)); /*max possible positions*/
 	world_cell** tmp_cell = possible_cells;
 	world_cell* aux_cell;
+	int bad_type;
 
 	memset(possible_cells, 0, 4*sizeof(world_cell*));
+
+	if(cell->type == SQUIRREL)
+		bad_type = WOLF;
+	else
+		bad_type = TREE;
+
 
 	/*check top cell*/
 	if(cell->y != 0){
 		aux_cell = &world[cell->x][cell->y - 1];
-		add_cell_squirrel(aux_cell, tmp_cell++);
+		add_cell(aux_cell, tmp_cell++, bad_type);
 	}
 	
 	/*check right cell*/
 	if(cell->x != grid_size-1){
 		aux_cell = &world[cell->x + 1][cell->y];
-		add_cell_squirrel(aux_cell, tmp_cell++);
+		add_cell(aux_cell, tmp_cell++, bad_type);
 	}
 	
 	/*check bottom cell*/
 	if(cell->y != grid_size-1){
 		aux_cell = &world[cell->x][cell->y + 1];
-		add_cell_squirrel(aux_cell, tmp_cell++);
+		add_cell(aux_cell, tmp_cell++, bad_type);
 	}
 	
 	/*check left cell */
 	if(cell->x != 0){
 		aux_cell = &world[cell->x - 1][cell->y];
-		add_cell_squirrel(aux_cell, tmp_cell++);
-	}
-	
-	return possible_cells;
-}
-
-void add_cell_wolf(world_cell* aux_cell, world_cell** possible_cells){
-	if(aux_cell->type != TREE && aux_cell->type != ICE){
-		*possible_cells = aux_cell;
-	}
-}
-
-world_cell** possible_cells_wolf(world_cell* cell){
-	
-	world_cell** possible_cells = malloc(4*sizeof(world_cell*)); /*max possible positions*/	
-	world_cell** tmp_cell = possible_cells;
-	/*int i = 0; FIXME: leftovers from previous code.*/
-	world_cell* aux_cell;
-
-	memset(possible_cells, 0, 4*sizeof(world_cell*));
-	
-	/*check top cell*/
-	if(cell->y != 0){
-		/*i++;*/
-		aux_cell = &world[cell->x][cell->y - 1];
-		add_cell_wolf(aux_cell, tmp_cell++);
-	}
-	
-	/*check right cell*/
-	if(cell->x != grid_size-1){
-		/*i++;*/
-		aux_cell = &world[cell->x + 1][cell->y];
-		add_cell_wolf(aux_cell, tmp_cell++);
-	}
-	
-	/*check bottom cell*/
-	if(cell->y != grid_size-1){
-	/*FIXME: dafuq my awesome refactoring doesn't work in this case can't find why. is this magic?
-	-----
-	well, it kinda works. the only difference between the logs is the "Possible cell for wolf in 4,2 is 3,2"
-	line in the first generation (the last possibility of that wolf). any ideas? */
-		aux_cell = &world[cell->x][cell->y + 1];
-		/*if(aux_cell->type != TREE && aux_cell->type != ICE){
-			possible_cells[i++] = aux_cell;
-			tmp_cell++;
-		}*/
-		add_cell_wolf(aux_cell, tmp_cell++);
-	}
-	
-	/*check left cell */
-	if(cell->x != 0){
-		aux_cell = &world[cell->x - 1][cell->y];
-		add_cell_wolf(aux_cell, tmp_cell++);
+		add_cell(aux_cell, tmp_cell++, bad_type);
 	}
 	
 	return possible_cells;
