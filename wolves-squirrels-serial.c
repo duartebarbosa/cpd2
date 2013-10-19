@@ -260,8 +260,8 @@ void update_world_cell(int i, int j){
 				break;
 			}
 		case ICE:
-			break;
 		case TREE:
+		default:
 			break;
 	}	
 }
