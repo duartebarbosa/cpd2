@@ -342,9 +342,8 @@ void initialize_world_array(int size){
 	for(; i < size; i++){
 		int j = 0;
 		world[i] = malloc(size * sizeof(world_cell*));
-		for(; j < size; j++){
+		for(; j < size; j++)
 			world[i][j] = create_world_cell(EMPTY, 0, 0, i, j);
-		}
 	}
 }
 
@@ -362,9 +361,9 @@ void print_world(){
 	for(i = 0; i < grid_size; i++){
 		int j = 0;
 		printf("%d|", i);
-		for(; j < grid_size; j++){
+		for(; j < grid_size; j++)
 			printf("%c|", world[j][i].type);
-		}
+
 		printf("\n");
 	}
 }
