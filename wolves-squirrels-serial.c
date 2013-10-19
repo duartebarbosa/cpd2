@@ -320,8 +320,7 @@ world_cell** possible_cells_wolf(world_cell* cell){
 	if(cell->y != 0){
 		aux_cell = &world[cell->x][cell->y - 1];
 		if(aux_cell->type != TREE && aux_cell->type != ICE){
-			possible_cells[i] = aux_cell;
-			i++;
+			possible_cells[i++] = aux_cell;
 		}
 	}
 	
@@ -329,8 +328,7 @@ world_cell** possible_cells_wolf(world_cell* cell){
 	if(cell->x != grid_size-1){
 		aux_cell = &world[cell->x + 1][cell->y];
 		if(aux_cell->type != TREE && aux_cell->type != ICE){
-			possible_cells[i] = aux_cell;
-			i++;
+			possible_cells[i++] = aux_cell;
 		}
 	}
 	
@@ -338,8 +336,7 @@ world_cell** possible_cells_wolf(world_cell* cell){
 	if(cell->y != grid_size-1){
 		aux_cell = &world[cell->x][cell->y + 1];
 		if(aux_cell->type != TREE && aux_cell->type != ICE){
-			possible_cells[i] = aux_cell;
-			i++;
+			possible_cells[i++] = aux_cell;
 		}
 	}
 	
@@ -347,8 +344,7 @@ world_cell** possible_cells_wolf(world_cell* cell){
 	if(cell->x != 0){
 		aux_cell = &world[cell->x - 1][cell->y];
 		if(aux_cell->type != TREE && aux_cell->type != ICE){
-			possible_cells[i] = aux_cell;
-			i++;
+			possible_cells[i++] = aux_cell;
 		}
 	}
 	
