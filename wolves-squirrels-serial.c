@@ -9,6 +9,8 @@
 #define SQUIRREL_IN_TREE '$'
 #define EMPTY ' ' /*We can just print as an empty space when printing the world*/
 
+#define MAX(a, b) ((a) > (b) ? (a) : (b))
+
 
 typedef struct {
 	int type; /* Wolf, squirrel, tree, ice*/
@@ -105,7 +107,7 @@ void move(world_cell* cell, world_cell* dest_cell) {
 	} else if((cell->type == SQUIRREL || cell->type == SQUIRREL_IN_TREE) && dest_cell->type == SQUIRREL){
 		/* Squirrel moving to squirrel*/
 		dest_cell->type = cell->type;
-		dest_cell->breeding_period = (cell->breeding_period > dest_cell->breeding_period ? cell->breeding_period : dest_cell->breeding_period)+1; /*FIXME: Should we increment the breeding period? */
+		dest_cell->breeding_period = MAX(cell->breeding_period, dest_cell->breeding_period)+1; /*FIXME: Should we increment the breeding period? */
 		dest_cell->starvation_period = cell->starvation_period;
 		
 		/* clean cell */
@@ -115,7 +117,7 @@ void move(world_cell* cell, world_cell* dest_cell) {
 	} else if(dest_cell->type == SQUIRREL_IN_TREE){
 		/* squirrel eating squirrel on tree */
 		dest_cell->type = SQUIRREL_IN_TREE;
-		dest_cell->breeding_period = (cell->breeding_period > dest_cell->breeding_period ? cell->breeding_period : dest_cell->breeding_period)+1; /* Should we increment the breeding period? */
+		dest_cell->breeding_period = MAX(cell->breeding_period, dest_cell->breeding_period)+1; /*FIXME: Should we increment the breeding period? */
 		dest_cell->starvation_period = cell->starvation_period;
 		
 		/* clean cell */
