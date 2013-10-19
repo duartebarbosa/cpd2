@@ -165,20 +165,18 @@ void move_squirrel(world_cell* cell, world_cell* dest_cell) {
 		dest_cell->breeding_period = cell->breeding_period+1;
 		
 		/* clean cell */
-		if(dest_cell->breeding_period >= squirrel_breeding_period){
+		cleanup_cell(cell);
+		if(dest_cell->breeding_period >= squirrel_breeding_period)
 			cell->type = SQUIRREL_IN_TREE;
-			dest_cell->breeding_period = 0;
-		} else
+		else
 			cell->type = TREE;
-		
-		cell->breeding_period = 0;
-		cell->starvation_period = 0;
+
+		dest_cell->breeding_period = 0;
 		
 	} else {
 		/* simple Squirrel */
 		dest_cell->type = cell->type;
 		dest_cell->breeding_period = cell->breeding_period + 1;
-		dest_cell->starvation_period = cell->starvation_period;
 		
 		/* clean cell or reproduce*/
 		if(dest_cell->breeding_period >= squirrel_breeding_period){
