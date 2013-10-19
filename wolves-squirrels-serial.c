@@ -271,7 +271,6 @@ void add_cell(world_cell* aux_cell, world_cell** possible_cells, int bad_type){
 	}
 }
 
-
 world_cell** retrieve_possible_cells(world_cell* cell){
 	
 	world_cell** possible_cells = malloc(4*sizeof(world_cell*)); /*max possible positions*/
@@ -334,7 +333,8 @@ void parse_input(char* filename){
 	initialize_world_array(grid_size);
 
 	while(fscanf(input,"%d %d %c\n",&i, &j, &type) == 3){ /*All arguments read succesfully*/
-		world[i][j] = create_world_cell(type, 0, 0,i,j);
+		world[i][j].type = type;
+		/* FIXME: should we initialize the cells with the default breeding and starvation periods? previous = create_world_cell(type, 0, 0,i,j);*/
 	}
 
 	if(fclose(input) == EOF)
@@ -359,7 +359,7 @@ void initialize_world_array(int size){
 		int j = 0;
 		world[i] = malloc(size * sizeof(world_cell*));
 		for(; j < size; j++){
-			world[i][j] = create_world_cell(EMPTY, EMPTY, EMPTY, i, j);
+			world[i][j] = create_world_cell(EMPTY, 0, 0, i, j);
 		}
 	}
 }
