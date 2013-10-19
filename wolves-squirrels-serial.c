@@ -308,44 +308,48 @@ world_cell** possible_cells_squirrel(world_cell* cell){
 	return possible_cells;
 }
 
-void add_cell_wolf(world_cell* aux_cell, int i, world_cell** possible_cells){
+void add_cell_wolf(world_cell* aux_cell, world_cell** possible_cells){
 	if(aux_cell->type != TREE && aux_cell->type != ICE){
-		possible_cells[i] = aux_cell;
+		*possible_cells = aux_cell;
 	}
 }
 
 world_cell** possible_cells_wolf(world_cell* cell){
 	
 	world_cell** possible_cells = malloc(4*sizeof(world_cell*)); /*max possible positions*/	
-	int i = 0; /*cell counter*/
+	world_cell** tmp_cell = possible_cells;
+	int i = 0; /*FIXME: leftovers from previous code.*/
 	world_cell* aux_cell;
 
 	memset(possible_cells, 0, 4*sizeof(world_cell*));
 	
 	/*check top cell*/
 	if(cell->y != 0){
+		i++;
 		aux_cell = &world[cell->x][cell->y - 1];
-		add_cell_wolf(aux_cell, i++, possible_cells);
+		add_cell_wolf(aux_cell, tmp_cell++);
 	}
 	
 	/*check right cell*/
 	if(cell->x != grid_size-1){
+		i++;
 		aux_cell = &world[cell->x + 1][cell->y];
-		add_cell_wolf(aux_cell, i++, possible_cells);
+		add_cell_wolf(aux_cell, tmp_cell++);
 	}
 	
 	/*check bottom cell*/
-	if(cell->y != grid_size-1){
+	if(cell->y != grid_size-1){ /*FIXME: dafuq my awesome refactoring doesn't work in this case can't find why. is this magic? */
 		aux_cell = &world[cell->x][cell->y + 1];
 		if(aux_cell->type != TREE && aux_cell->type != ICE){
 			possible_cells[i++] = aux_cell;
+			tmp_cell++;
 		}
 	}
 	
 	/*check left cell */
 	if(cell->x != 0){
 		aux_cell = &world[cell->x - 1][cell->y];
-		add_cell_wolf(aux_cell, i++, possible_cells);
+		add_cell_wolf(aux_cell, tmp_cell++);
 	}
 	
 	return possible_cells;
