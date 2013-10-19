@@ -198,13 +198,12 @@ void move(world_cell* cell, world_cell* dest_cell) {
 }
 
 int choose_cell(int i, int j, int p){
-	int c = i*grid_size + j;
+	int c = i * grid_size + j;
 	return c % p;
 }
 
 void update_world_cell(int i, int j){
 	world_cell *cell = &world[i][j];
-	
 	world_cell** possible_cells;
 
 	if(cell->moved){
@@ -231,12 +230,12 @@ void update_world_cell(int i, int j){
 					possible_cells_count++;
 				}
 				
-				if(squirrels_found > 0){
+				if(squirrels_found > 0)
 					move(cell, squirrel_cells[choose_cell(cell->x, cell->y, squirrels_found)]);
-				} else {
+				else
 					move(cell, possible_cells[choose_cell(cell->x, cell->y, possible_cells_count)]);
-				}
-			
+
+				free(squirrel_cells);
 				break;
 			}
 		case SQUIRREL: 
