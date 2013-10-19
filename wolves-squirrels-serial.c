@@ -109,10 +109,9 @@ void move_wolf(world_cell* cell, world_cell* dest_cell) {
 		case WOLF:
 			/* Wolf fighting wolf */
 			dest_cell->type = cell->type;
-			
+			/* same starvation */			
 			if(cell->starvation_period == dest_cell->starvation_period){
 				dest_cell->breeding_period = (cell->breeding_period > dest_cell->breeding_period ? cell->breeding_period : dest_cell->breeding_period)+1; /*FIXME: Should we increment the breeding period? */
-				/* same starvation */
 			} else {
 				dest_cell->breeding_period = (cell->starvation_period > dest_cell->starvation_period ? cell->breeding_period : dest_cell->breeding_period)+1; /*FIXME: Should we increment the breeding period? */
 				dest_cell->starvation_period = (cell->starvation_period > dest_cell->starvation_period ? cell->starvation_period : dest_cell->starvation_period)+1;
@@ -138,35 +137,32 @@ void move_wolf(world_cell* cell, world_cell* dest_cell) {
 }
 
 void move_squirrel(world_cell* cell, world_cell* dest_cell) {
-	if(dest_cell->type==TREE){
+	dest_cell->starvation_period = cell->starvation_period;
+	if(dest_cell->type == TREE){
 		/* Squirrel climbing tree */
 		dest_cell->type = SQUIRREL_IN_TREE;
 		dest_cell->breeding_period = cell->breeding_period+1;
-		dest_cell->starvation_period = cell->starvation_period;
 
-		/* clean cell */		
+		/* clean cell */
 		cleanup_cell(cell);
 	} else if(dest_cell->type == SQUIRREL){
 		/* Squirrel moving to squirrel*/
 		dest_cell->type = cell->type;
 		dest_cell->breeding_period = MAX(cell->breeding_period, dest_cell->breeding_period)+1; /*FIXME: Should we increment the breeding period? */
-		dest_cell->starvation_period = cell->starvation_period;
 		
-		/* clean cell */		
+		/* clean cell */
 		cleanup_cell(cell);
 	} else if(dest_cell->type == SQUIRREL_IN_TREE){
 		/* squirrel eating squirrel on tree */
 		dest_cell->type = SQUIRREL_IN_TREE;
 		dest_cell->breeding_period = MAX(cell->breeding_period, dest_cell->breeding_period)+1; /*FIXME: Should we increment the breeding period? */
-		dest_cell->starvation_period = cell->starvation_period;
 		
-		/* clean cell */		
+		/* clean cell */
 		cleanup_cell(cell);
 	} else if(cell->type == SQUIRREL_IN_TREE){
 		/* Squirrel leaving tree */
 		dest_cell->type = SQUIRREL;
 		dest_cell->breeding_period = cell->breeding_period+1;
-		dest_cell->starvation_period = cell->starvation_period;
 		
 		/* clean cell */
 		if(dest_cell->breeding_period >= squirrel_breeding_period){
