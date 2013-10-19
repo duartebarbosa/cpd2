@@ -67,23 +67,20 @@ void start_world_simulation(){
 
 		/* update 'red' cells, think chessboard */
 		for(i = 0; i < grid_size; i++){
-			j = (i % 2) ? 1 : 0;
-			for (; j < grid_size; j += 2){
+			for (j = (i % 2) ? 1 : 0; j < grid_size; j += 2){
 				update_world_cell(i,j);
 			}
 		}
 				
 		/* update 'black' cells, think chessboard */
 		for(i = 0; i < grid_size; i++){
-			j = (i % 2) ? 0 : 1;
-			for (; j < grid_size; j += 2){
+			for (j = (i % 2) ? 0 : 1; j < grid_size; j += 2){
 				update_world_cell(i,j);
 			}
 		}
 		
 		for(i = 0; i < grid_size; i++){
-			j = 0;
-			for (; j < grid_size; j ++){
+			for (j = 0; j < grid_size; j ++){
 				world[i][j].moved = 0;
 			}
 		}
