@@ -202,9 +202,10 @@ int choose_cell(int i, int j, int p){
 	return c % p;
 }
 
-void update_world_cell(int i, int j){
-	world_cell *cell = &world[i][j];
+void update_world_cell(int x, int y){
+	world_cell *cell = &world[x][y];
 	world_cell** possible_cells;
+	int i = 0, possible_cells_count = 0;
 
 	if(cell->moved){
 		return;
@@ -213,8 +214,8 @@ void update_world_cell(int i, int j){
 	/* perfom logic for each cell type */
 	switch(cell->type){
 		case WOLF: {
-				int i = 0, possible_cells_count = 0, squirrels_found = 0;
-				world_cell** squirrel_cells  = malloc(4*sizeof(world_cell*));
+				int squirrels_found = 0;
+				world_cell** squirrel_cells = malloc(4*sizeof(world_cell*));
 
 				printf("Checking possible cells for wolf in %d,%d\n", cell->x,cell->y);
 				possible_cells = retrieve_possible_cells(cell);
@@ -240,7 +241,6 @@ void update_world_cell(int i, int j){
 			}
 		case SQUIRREL: 
 		case SQUIRREL_IN_TREE: {
-				int i = 0, possible_cells_count = 0;
 				printf("Checking possible cells for squirrel in %d,%d\n", cell->x,cell->y);
 				possible_cells = retrieve_possible_cells(cell);
 				for(; i < 4; i++){
@@ -252,7 +252,6 @@ void update_world_cell(int i, int j){
 				}
 				
 				move(cell, possible_cells[choose_cell(cell->x, cell->y, possible_cells_count)]);
-
 				break;
 			}
 		case ICE:
