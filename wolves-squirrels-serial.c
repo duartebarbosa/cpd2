@@ -290,19 +290,19 @@ world_cell** retrieve_possible_cells(world_cell* cell){
 		bad_type = TREE;
 
 	/*check top cell*/
-	if(cell->y != 0 && add_cell(&world[cell->x][cell->y - 1], tmp_cell, bad_type))
+	if(cell->x != 0 && add_cell(&world[cell->x-1][cell->y], tmp_cell, bad_type))
 		tmp_cell++;
 	
 	/*check right cell*/
-	if(cell->x != grid_size-1 && add_cell(&world[cell->x + 1][cell->y], tmp_cell, bad_type))
+	if(cell->y != grid_size-1 && add_cell(&world[cell->x][cell->y+1], tmp_cell, bad_type))
 		tmp_cell++;
 	
 	/*check bottom cell*/
-	if(cell->y != grid_size-1 && add_cell(&world[cell->x][cell->y + 1], tmp_cell, bad_type))
+	if(cell->x != grid_size-1 && add_cell(&world[cell->x+1][cell->y], tmp_cell, bad_type))
 		tmp_cell++;
 	
 	/*check left cell */
-	if(cell->x != 0 && add_cell(&world[cell->x - 1][cell->y], tmp_cell, bad_type))
+	if(cell->y != 0 && add_cell(&world[cell->x][cell->y-1], tmp_cell, bad_type))
 		tmp_cell++;
 	
 	return possible_cells;
