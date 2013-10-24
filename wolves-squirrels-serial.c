@@ -71,7 +71,10 @@ void start_world_simulation(){
 				update_world_cell(i,j);
 			}
 		}
-				
+		
+		printf("*** RED ***\n");		
+		print_world();
+
 		/* update 'black' cells, think chessboard */
 		for(i = 0; i < grid_size; i++){
 			for (j = (i % 2) ? 0 : 1; j < grid_size; j += 2){
@@ -85,6 +88,7 @@ void start_world_simulation(){
 			}
 		}
 		
+		printf("*** BLACK ***\n");		
 		print_world();
 	}
 }
@@ -207,8 +211,8 @@ void update_world_cell(int x, int y){
 	world_cell** possible_cells;
 	int i = 0, possible_cells_count = 0;
 
-	if(cell->moved)
-		return;
+	/*if(cell->moved)
+		return;*/
 
 	/* perfom logic for each cell type */
 	switch(cell->type){
@@ -232,7 +236,7 @@ void update_world_cell(int x, int y){
 				
 				if(squirrels_found > 0)
 					move(cell, squirrel_cells[choose_cell(cell->x, cell->y, squirrels_found)]);
-				else
+				else if (possible_cells_count > 0)
 					move(cell, possible_cells[choose_cell(cell->x, cell->y, possible_cells_count)]);
 
 				free(squirrel_cells);
@@ -250,7 +254,11 @@ void update_world_cell(int x, int y){
 				printf("Possible cell for squirrel in %d,%d is %d,%d\n", cell->x,cell->y, possible_cells[i]->x,possible_cells[i]->y);
 			}
 
-			move(cell, possible_cells[choose_cell(cell->x, cell->y, possible_cells_count)]);
+			if(possible_cells_count > 0)
+				move(cell, possible_cells[choose_cell(cell->x, cell->y, possible_cells_count)]);
+			else
+				printf("Squirrel has no place to go...\n");
+			
 			break;
 		case ICE:
 		case TREE:
@@ -259,9 +267,13 @@ void update_world_cell(int x, int y){
 	}
 }
 
-void add_cell(world_cell* aux_cell, world_cell** possible_cells, int bad_type){
-	if(aux_cell->type != bad_type && aux_cell->type != ICE)
+int add_cell(world_cell* aux_cell, world_cell** possible_cells, int bad_type){
+	if(aux_cell->type != bad_type && aux_cell->type != ICE){
 		*possible_cells = aux_cell;
+		return 1;
+	} else {
+		return 0;
+	}
 }
 
 world_cell** retrieve_possible_cells(world_cell* cell){
@@ -278,20 +290,20 @@ world_cell** retrieve_possible_cells(world_cell* cell){
 		bad_type = TREE;
 
 	/*check top cell*/
-	if(cell->y != 0)
-		add_cell(&world[cell->x][cell->y - 1], tmp_cell++, bad_type);
+	if(cell->y != 0 && add_cell(&world[cell->x][cell->y - 1], tmp_cell, bad_type))
+		tmp_cell++;
 	
 	/*check right cell*/
-	if(cell->x != grid_size-1)
-		add_cell(&world[cell->x + 1][cell->y], tmp_cell++, bad_type);
+	if(cell->x != grid_size-1 && add_cell(&world[cell->x + 1][cell->y], tmp_cell, bad_type))
+		tmp_cell++;
 	
 	/*check bottom cell*/
-	if(cell->y != grid_size-1)
-		add_cell(&world[cell->x][cell->y + 1], tmp_cell++, bad_type);
+	if(cell->y != grid_size-1 && add_cell(&world[cell->x][cell->y + 1], tmp_cell, bad_type))
+		tmp_cell++;
 	
 	/*check left cell */
-	if(cell->x != 0)
-		add_cell(&world[cell->x - 1][cell->y], tmp_cell++, bad_type);
+	if(cell->x != 0 && add_cell(&world[cell->x - 1][cell->y], tmp_cell, bad_type))
+		tmp_cell++;
 	
 	return possible_cells;
 }
@@ -361,7 +373,7 @@ void print_world(){
 		int j = 0;
 		printf("%d|", i);
 		for(; j < grid_size; j++)
-			printf("%c|", world[j][i].type);
+			printf("%c|", world[i][j].type);
 
 		printf("\n");
 	}
