@@ -127,6 +127,9 @@ void start_world_simulation(){
 			}
 		}
 		
+		printf("*** BLACK %d ***\n", g + 1);		
+		print_world();
+		
 		for(i = 0; i < grid_size; i++){
 			for (j = 0; j < grid_size; j ++){
 				if (world[i][j].moved){
@@ -138,18 +141,15 @@ void start_world_simulation(){
 						
 						if(world[i][j].starvation_period <= 0){
 							cleanup_cell(&world[i][j]);
+							printf("Bye Wolf (%d, %d)\n", i, j);
 						}
 					}
 				}
 				world[i][j].moved = 0;
 			}
-		}
-				
-		printf("*** BLACK %d ***\n", g + 1);		
-		print_world();
+		}	
 	}
 	
-
 }
 
 void move_wolf(world_cell* cell, world_cell* dest_cell) {
@@ -168,10 +168,11 @@ void move_wolf(world_cell* cell, world_cell* dest_cell) {
 			dest_cell->type = cell->type;
 			/* same starvation */			
 			if(cell->starvation_period == dest_cell->starvation_period){
+				printf("Wolves fighting wih same starvation!\n");
 				dest_cell->breeding_period = (cell->breeding_period > dest_cell->breeding_period ? cell->breeding_period : dest_cell->breeding_period)/* + 1*/; /*FIXME: Should we increment the breeding period? */
+				printf("New wolf: %d\n", dest_cell->starvation_period);
 			} else {
-								printf("Wolves fighting! Wolf 1 (%d,%d) has %d and wolf 2 (%d,%d) has %d\n", cell->starvation_period, cell->x, cell->y, dest_cell->starvation_period, dest_cell->x, dest_cell->y);
-
+				printf("Wolves fighting! Wolf 1 (%d,%d) has %d and wolf 2 (%d,%d) has %d\n", cell->starvation_period, cell->x, cell->y, dest_cell->starvation_period, dest_cell->x, dest_cell->y);
 				dest_cell->breeding_period = (cell->starvation_period > dest_cell->starvation_period ? cell->breeding_period : dest_cell->breeding_period)/* + 1*/; /*FIXME: Should we increment the breeding period? */
 				dest_cell->starvation_period = (cell->starvation_period > dest_cell->starvation_period ? cell->starvation_period : dest_cell->starvation_period)/* + 1*/;
 				printf("New wolf: %d\n", dest_cell->starvation_period);
@@ -191,6 +192,8 @@ void move_wolf(world_cell* cell, world_cell* dest_cell) {
 				cell->type = WOLF;
 				cell->breeding_period = 0;
 				cell->starvation_period = wolf_starvation_period;
+				dest_cell->breeding_period = 0;
+				printf("Left a new wolf on %d %d, from wolf now on %d %d (%c)\n", cell->x, cell->y, dest_cell->x, dest_cell->y, dest_cell->type);
 			} else
 				cleanup_cell(cell);
 	}
@@ -393,7 +396,9 @@ void parse_input(char* filename){
 
 	while(fscanf(input,"%d %d %c\n",&i, &j, &type) == 3){ /*All arguments read succesfully*/
 		world[i][j].type = type;
-		/* FIXME: should we initialize the cells with the default breeding and starvation periods? previous = create_world_cell(type, 0, 0,i,j);*/
+		if(type == WOLF){
+			world[i][j].starvation_period = wolf_starvation_period;
+		}
 	}
 
 	if(fclose(input) == EOF)
