@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <omp.h>
 
 #define WOLF 'w'
 #define SQUIRREL 's'
@@ -44,8 +45,14 @@ int number_of_generations;
 int grid_size;
 
 
+
+
 int main(int argc, char **argv){
 
+	#ifdef GETTIME
+    double start = omp_get_wtime();
+    #endif
+        
 	/* Maybe check for invalid input? */
 	wolf_breeding_period = atoi(argv[2]);
 	squirrel_breeding_period = atoi(argv[3]);
@@ -55,10 +62,14 @@ int main(int argc, char **argv){
 	parse_input(argv[1]); /* Filename */
 	
 	print_world_stats();
-	print_world();
+	/*print_world();*/
 	
 	start_world_simulation();
 
+	#ifdef GETTIME
+    printf("OpenMP time: %fs\n", omp_get_wtime() - start);
+    #endif
+	
 	return 0;
 }
 
@@ -90,9 +101,14 @@ void copy_world(){
 	int i = 0;
 	for(; i < grid_size; i++){
 		int j = 0;
+		
+		free(world_prev_gen[i]);
+		world_prev_gen[i] = malloc(grid_size * sizeof(world_cell));
+		
 		for(; j < grid_size; j++){
 			/*printf("I: %d, J: %d\n", i, j);*/
 			/*			printf("(%d, %d) WORLD ac: %c %d %d\n", i,j,world[i][j].type, world[i][j].x, world[i][j].y);*/
+			
 			world_prev_gen[i][j] = copy_cell(world[i][j]);
 			/*printf("(%d, %d) WORLD dc: %c %d %d\n", i,j,world[i][j].type, world[i][j].x, world[i][j].y);*/
 			/*printf("WORLD PREV GEN: %c %d %d\n", world_prev_gen[i][j].type, world_prev_gen[i][j].x, world_prev_gen[i][j].y);*/
@@ -103,7 +119,7 @@ void copy_world(){
 void start_world_simulation(){
 	int g = 0, i, j;
 	for(; g < number_of_generations; g++){
-		printf("---- Generation %d ----\n", g + 1);
+		/*printf("---- Generation %d ----\n", g + 1);*/
 
 		copy_world();
 
@@ -116,8 +132,8 @@ void start_world_simulation(){
 			
 		}
 
-		printf("*** RED %d ***\n", g + 1);		
-		print_world();
+		/*printf("*** RED %d ***\n", g + 1);		*/
+		/*print_world();*/
 		copy_world();
 
 		/* update 'black' cells, think chessboard */
@@ -127,8 +143,8 @@ void start_world_simulation(){
 			}
 		}
 		
-		printf("*** BLACK %d ***\n", g + 1);		
-		print_world();
+		/*printf("*** BLACK %d ***\n", g + 1);*/		
+		/*print_world();*/
 		
 		for(i = 0; i < grid_size; i++){
 			for (j = 0; j < grid_size; j ++){
@@ -141,7 +157,7 @@ void start_world_simulation(){
 						
 						if(world[i][j].starvation_period <= 0){
 							cleanup_cell(&world[i][j]);
-							printf("Bye Wolf (%d, %d)\n", i, j);
+							/*printf("Bye Wolf (%d, %d)\n", i, j);*/
 						}
 					}
 				}
@@ -168,14 +184,14 @@ void move_wolf(world_cell* cell, world_cell* dest_cell) {
 			dest_cell->type = cell->type;
 			/* same starvation */			
 			if(cell->starvation_period == dest_cell->starvation_period){
-				printf("Wolves fighting wih same starvation!\n");
+				/*printf("Wolves fighting wih same starvation!\n");*/
 				dest_cell->breeding_period = (cell->breeding_period > dest_cell->breeding_period ? cell->breeding_period : dest_cell->breeding_period)/* + 1*/; /*FIXME: Should we increment the breeding period? */
-				printf("New wolf: %d\n", dest_cell->starvation_period);
+				/*printf("New wolf: %d\n", dest_cell->starvation_period);*/
 			} else {
-				printf("Wolves fighting! Wolf 1 (%d,%d) has %d and wolf 2 (%d,%d) has %d\n", cell->starvation_period, cell->x, cell->y, dest_cell->starvation_period, dest_cell->x, dest_cell->y);
+				/*printf("Wolves fighting! Wolf 1 (%d,%d) has %d and wolf 2 (%d,%d) has %d\n", cell->starvation_period, cell->x, cell->y, dest_cell->starvation_period, dest_cell->x, dest_cell->y);*/
 				dest_cell->breeding_period = (cell->starvation_period > dest_cell->starvation_period ? cell->breeding_period : dest_cell->breeding_period)/* + 1*/; /*FIXME: Should we increment the breeding period? */
 				dest_cell->starvation_period = (cell->starvation_period > dest_cell->starvation_period ? cell->starvation_period : dest_cell->starvation_period)/* + 1*/;
-				printf("New wolf: %d\n", dest_cell->starvation_period);
+				/*printf("New wolf: %d\n", dest_cell->starvation_period);*/
 			}
 			
 			/* clean cell */		
@@ -193,7 +209,7 @@ void move_wolf(world_cell* cell, world_cell* dest_cell) {
 				cell->breeding_period = 0;
 				cell->starvation_period = wolf_starvation_period;
 				dest_cell->breeding_period = 0;
-				printf("Left a new wolf on %d %d, from wolf now on %d %d (%c)\n", cell->x, cell->y, dest_cell->x, dest_cell->y, dest_cell->type);
+				/*printf("Left a new wolf on %d %d, from wolf now on %d %d (%c)\n", cell->x, cell->y, dest_cell->x, dest_cell->y, dest_cell->type);*/
 			} else
 				cleanup_cell(cell);
 	}
@@ -282,13 +298,13 @@ void update_world_cell(int x, int y){
 				int squirrels_found = 0;
 				world_cell** squirrel_cells = malloc(4 * sizeof(world_cell*));
 
-				printf("Checking possible cells for wolf in %d,%d\n", cell->x,cell->y);
+				/*printf("Checking possible cells for wolf in %d,%d\n", cell->x,cell->y);*/
 				possible_cells = retrieve_possible_cells(cell);
 				for(; i < 4; i++){
 					if(possible_cells[i] == NULL)
 						break;
 
-					printf("Possible cell for wolf in %d,%d is %d,%d\n", cell->x,cell->y, possible_cells[i]->x,possible_cells[i]->y);
+					/*printf("Possible cell for wolf in %d,%d is %d,%d\n", cell->x,cell->y, possible_cells[i]->x,possible_cells[i]->y);*/
 
 					if(possible_cells[i]->type == SQUIRREL)
 						squirrel_cells[squirrels_found++] = possible_cells[i];
@@ -306,14 +322,14 @@ void update_world_cell(int x, int y){
 			}
 		case SQUIRREL: 
 		case SQUIRREL_IN_TREE:
-			printf("Checking possible cells for squirrel in %d,%d\n", cell->x,cell->y);
+			/*printf("Checking possible cells for squirrel in %d,%d\n", cell->x,cell->y);*/
 			possible_cells = retrieve_possible_cells(cell);
 			for(; i < 4; i++){
 				if(possible_cells[i] == NULL)
 					break;
 
 				possible_cells_count++;
-				printf("Possible cell for squirrel in %d,%d is %d,%d\n", cell->x,cell->y, possible_cells[i]->x,possible_cells[i]->y);
+				/*printf("Possible cell for squirrel in %d,%d is %d,%d\n", cell->x,cell->y, possible_cells[i]->x,possible_cells[i]->y);*/
 			}
 
 			if(possible_cells_count > 0)
