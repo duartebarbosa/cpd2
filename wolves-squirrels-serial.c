@@ -14,38 +14,35 @@
 
 
 typedef struct {
-	int type; /* Wolf, squirrel, tree, ice*/
-	int breeding_period;
-	int starvation_period;
-	int x;
-	int y;
-	int moved;
+	char type; /* Wolf, squirrel, tree, ice*/
+	unsigned short breeding_period;
+	unsigned short starvation_period;
+	unsigned short x;
+	unsigned short y;
+	char moved;
 } world_cell;
 
 /* Functions */
-void initialize_world_array(int size);
+void initialize_world_array(unsigned short size);
 void parse_input(char* filename);
 void print_world();
 void print_prev_world();
 void print_world_stats();
 void start_world_simulation();
-void create_world_cell(world_cell* cell, int type, int breeding_period, int starvation_period, int x, int y);
-void update_world_cell(int i, int j);
+void create_world_cell(world_cell* cell, char type, unsigned short breeding_period, unsigned short starvation_period, unsigned short x, unsigned short y);
+void update_world_cell(unsigned short i, unsigned short j);
 world_cell** retrieve_possible_cells(world_cell* cell);
 void move(world_cell* cell, world_cell* dest_cell);
-int choose_cell(int i, int j, int p);
+unsigned short choose_cell(unsigned short i, unsigned short j, unsigned short p);
 
 /* Global Variables */
 world_cell **world;
 world_cell **world_prev_gen;
-int wolf_breeding_period;
-int squirrel_breeding_period;
-int wolf_starvation_period;
-int number_of_generations;
-int grid_size;
-
-
-
+unsigned short wolf_breeding_period;
+unsigned short squirrel_breeding_period;
+unsigned short wolf_starvation_period;
+unsigned short number_of_generations;
+unsigned short grid_size;
 
 int main(int argc, char **argv){
 
@@ -87,10 +84,9 @@ void cleanup_cell(world_cell* cell){
 }
 
 void copy_world(){
-	int i = 0;
-	for(; i < grid_size; i++){
-		int j = 0;		
-		for(; j < grid_size; j++){
+	int i, j;
+	for(i = 0; i < grid_size; i++){
+		for(j = 0; j < grid_size; j++){
 			 copy_cell(&world[i][j], &world_prev_gen[i][j]);
 		}
 	}
@@ -165,12 +161,12 @@ void move_wolf(world_cell* cell, world_cell* dest_cell) {
 			/* same starvation */			
 			if(cell->starvation_period == dest_cell->starvation_period){
 				/*printf("Wolves fighting wih same starvation!\n");*/
-				dest_cell->breeding_period = (cell->breeding_period > dest_cell->breeding_period ? cell->breeding_period : dest_cell->breeding_period)/* + 1*/; /*FIXME: Should we increment the breeding period? */
+				dest_cell->breeding_period = MAX(cell->breeding_period, dest_cell->breeding_period);
 				/*printf("New wolf: %d\n", dest_cell->starvation_period);*/
 			} else {
 				/*printf("Wolves fighting! Wolf 1 (%d,%d) has %d and wolf 2 (%d,%d) has %d\n", cell->starvation_period, cell->x, cell->y, dest_cell->starvation_period, dest_cell->x, dest_cell->y);*/
 				dest_cell->breeding_period = (cell->starvation_period > dest_cell->starvation_period ? cell->breeding_period : dest_cell->breeding_period)/* + 1*/; /*FIXME: Should we increment the breeding period? */
-				dest_cell->starvation_period = (cell->starvation_period > dest_cell->starvation_period ? cell->starvation_period : dest_cell->starvation_period)/* + 1*/;
+				dest_cell->starvation_period = MAX(cell->starvation_period, dest_cell->starvation_period);
 				/*printf("New wolf: %d\n", dest_cell->starvation_period);*/
 			}
 			
@@ -256,15 +252,11 @@ void move(world_cell* cell, world_cell* dest_cell) {
 		move_squirrel(cell, dest_cell);
 }
 
-int choose_cell(int i, int j, int p){
-	int c = i * grid_size + j;
-	return c % p;
+unsigned short choose_cell(unsigned short i, unsigned short j, unsigned short p){
+	return (i * grid_size + j) % p;
 }
 
-
-
-
-void update_world_cell(int x, int y){
+void update_world_cell(unsigned short x, unsigned short y){
 	world_cell *cell = &world[x][y];
 	world_cell** possible_cells;
 	int i = 0, possible_cells_count = 0;
@@ -274,6 +266,10 @@ void update_world_cell(int x, int y){
 
 	/* perfom logic for each cell type */
 	switch(cell->type){
+		case EMPTY:
+		case TREE:
+		case ICE:
+			break;
 		case WOLF: {
 				int squirrels_found = 0;
 				world_cell** squirrel_cells = malloc(4 * sizeof(world_cell*));
@@ -314,12 +310,8 @@ void update_world_cell(int x, int y){
 
 			if(possible_cells_count > 0)
 				move(cell, possible_cells[choose_cell(cell->x, cell->y, possible_cells_count)]);
-			else
-				printf("Squirrel has no place to go...\n");
 			
 			break;
-		case ICE:
-		case TREE:
 		default:
 			break;
 	}
@@ -329,9 +321,9 @@ int add_cell(world_cell* aux_cell, world_cell** possible_cells, int bad_type){
 	if(aux_cell->type != bad_type && aux_cell->type != WOLF && aux_cell->type != ICE){
 		*possible_cells = &world[aux_cell->x][aux_cell->y];
 		return 1;
-	} else {
-		return 0;
 	}
+	return 0;
+
 }
 
 world_cell** retrieve_possible_cells(world_cell* cell){
@@ -373,7 +365,7 @@ world_cell** retrieve_possible_cells(world_cell* cell){
 
 void parse_input(char* filename){
 
-	int i, j;
+	unsigned short i, j;
 	char type;
 	FILE *input;
 
@@ -382,7 +374,7 @@ void parse_input(char* filename){
 		exit(1);
 	}
 
-	if(fscanf(input, "%d\n", &grid_size) == 0){
+	if(fscanf(input, "%hu\n", &grid_size) == 0){
 		printf("No grid size.");
 		exit(2);
 	}
@@ -390,7 +382,7 @@ void parse_input(char* filename){
 	/*We only know the world size here*/
 	initialize_world_array(grid_size);
 
-	while(fscanf(input,"%d %d %c\n",&i, &j, &type) == 3){ /*All arguments read succesfully*/
+	while(fscanf(input,"%hu %hu %c\n",&i, &j, &type) == 3){ /*All arguments read succesfully*/
 		world[i][j].type = type;
 		if(type == WOLF){
 			world[i][j].starvation_period = wolf_starvation_period;
@@ -402,7 +394,7 @@ void parse_input(char* filename){
 	
 }
 
-void create_world_cell(world_cell* cell, int type,int breeding_period,int starvation_period, int x, int y){
+void create_world_cell(world_cell* cell, char type,unsigned short breeding_period,unsigned short starvation_period, unsigned short x, unsigned short y){
 		cell->type = type;
 		cell->starvation_period = starvation_period;
 		cell->breeding_period = breeding_period;
@@ -412,13 +404,13 @@ void create_world_cell(world_cell* cell, int type,int breeding_period,int starva
 }
 
 
-void initialize_world_array(int size){
-	int i = 0;
+void initialize_world_array(unsigned short size){
+	unsigned short i = 0;
 	world = malloc(size * sizeof(world_cell*));
 	world_prev_gen = malloc(size * sizeof(world_cell*));
 
 	for(; i < size; i++){
-		int j = 0;
+		unsigned short j = 0;
 		world[i] = malloc(size * sizeof(world_cell));
 		world_prev_gen[i] = malloc(size * sizeof(world_cell));
 
