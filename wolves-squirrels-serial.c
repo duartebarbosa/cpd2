@@ -29,7 +29,7 @@ void print_world();
 void print_prev_world();
 void print_world_stats();
 void start_world_simulation();
-world_cell create_world_cell(int type, int breeding_period, int starvation_period, int x, int y);
+void create_world_cell(world_cell* cell, int type, int breeding_period, int starvation_period, int x, int y);
 void update_world_cell(int i, int j);
 world_cell** retrieve_possible_cells(world_cell* cell);
 void move(world_cell* cell, world_cell* dest_cell);
@@ -62,9 +62,10 @@ int main(int argc, char **argv){
 	parse_input(argv[1]); /* Filename */
 	
 	print_world_stats();
-	/*print_world();*/
 	
 	start_world_simulation();
+
+	/*print_world();*/
 
 	#ifdef GETTIME
     printf("OpenMP time: %fs\n", omp_get_wtime() - start);
@@ -73,22 +74,10 @@ int main(int argc, char **argv){
 	return 0;
 }
 
-world_cell copy_cell(world_cell cell){
-	/*world_cell* copy = malloc(sizeof(world_cell));*/
-
-	/*copy->type = cell.type;
-	copy->breeding_period = cell.breeding_period;
-	copy->starvation_period = cell.starvation_period;
-	copy->x = cell.x;
-	copy->y = cell.y;
-	copy->moved = cell.moved;*/
-	world_cell copy = create_world_cell(cell.type, cell.breeding_period, cell.starvation_period, cell.x, cell.y);
+void copy_cell(world_cell *source, world_cell* dest){
+	create_world_cell(dest, source->type, source->breeding_period, source->starvation_period, source->x, source->y);
 			/*printf("Copying cell (%c, %d, %d)\n", cell.type, cell.x, cell.y);*/
-
-	copy.moved = cell.moved;
-		/*printf("Copy complete. (%c, %d, %d)\n", copy.type, copy.x, copy.y);*/
-
-	return copy;
+	dest->moved = source->moved;
 }
 
 void cleanup_cell(world_cell* cell){
@@ -100,18 +89,9 @@ void cleanup_cell(world_cell* cell){
 void copy_world(){
 	int i = 0;
 	for(; i < grid_size; i++){
-		int j = 0;
-		
-		free(world_prev_gen[i]);
-		world_prev_gen[i] = malloc(grid_size * sizeof(world_cell));
-		
+		int j = 0;		
 		for(; j < grid_size; j++){
-			/*printf("I: %d, J: %d\n", i, j);*/
-			/*			printf("(%d, %d) WORLD ac: %c %d %d\n", i,j,world[i][j].type, world[i][j].x, world[i][j].y);*/
-			
-			world_prev_gen[i][j] = copy_cell(world[i][j]);
-			/*printf("(%d, %d) WORLD dc: %c %d %d\n", i,j,world[i][j].type, world[i][j].x, world[i][j].y);*/
-			/*printf("WORLD PREV GEN: %c %d %d\n", world_prev_gen[i][j].type, world_prev_gen[i][j].x, world_prev_gen[i][j].y);*/
+			 copy_cell(&world[i][j], &world_prev_gen[i][j]);
 		}
 	}
 }
@@ -422,15 +402,13 @@ void parse_input(char* filename){
 	
 }
 
-world_cell create_world_cell(int type,int breeding_period,int starvation_period, int x, int y){
-		world_cell *cell = malloc(sizeof(world_cell));
+void create_world_cell(world_cell* cell, int type,int breeding_period,int starvation_period, int x, int y){
 		cell->type = type;
 		cell->starvation_period = starvation_period;
 		cell->breeding_period = breeding_period;
 		cell->x = x;
 		cell->y = y;
 		cell->moved = 0;
-		return *cell;
 }
 
 
@@ -445,8 +423,8 @@ void initialize_world_array(int size){
 		world_prev_gen[i] = malloc(size * sizeof(world_cell));
 
 		for(; j < size; j++){
-			world[i][j] = create_world_cell(EMPTY, 0, 0, i, j);
-			world_prev_gen[i][j] = create_world_cell(EMPTY, 0, 0, i, j);
+			create_world_cell(&world[i][j], EMPTY, 0, 0, i, j);
+			create_world_cell(&world_prev_gen[i][j], EMPTY, 0, 0, i, j);
 		}
 	}
 	
