@@ -25,6 +25,7 @@ typedef struct {
 void initialize_world_array(int size);
 void parse_input(char* filename);
 void print_world();
+void print_prev_world();
 void print_world_stats();
 void start_world_simulation();
 world_cell create_world_cell(int type, int breeding_period, int starvation_period, int x, int y);
@@ -35,6 +36,7 @@ int choose_cell(int i, int j, int p);
 
 /* Global Variables */
 world_cell **world;
+world_cell **world_prev_gen;
 int wolf_breeding_period;
 int squirrel_breeding_period;
 int wolf_starvation_period;
@@ -60,10 +62,27 @@ int main(int argc, char **argv){
 	return 0;
 }
 
+void cleanup_cell(world_cell* cell){
+	cell->type = EMPTY;
+	cell->breeding_period = 0;
+	cell->starvation_period = 0;
+}
+
+void copy_world(){
+	int i = 0;
+
+	for(; i < grid_size; i++){
+		memcpy(world_prev_gen[i], world[i], grid_size * sizeof(world_cell));
+
+	}
+}
+
 void start_world_simulation(){
 	int g = 0, i, j;
 	for(; g < number_of_generations; g++){
 		printf("---- Generation %d ----\n", g + 1);
+
+		copy_world();
 
 		/* update 'red' cells, think chessboard */
 		for(i = 0; i < grid_size; i++){
@@ -71,9 +90,10 @@ void start_world_simulation(){
 				update_world_cell(i,j);
 			}
 		}
-		
+
 		printf("*** RED %d ***\n", g + 1);		
 		print_world();
+		copy_world();
 
 		/* update 'black' cells, think chessboard */
 		for(i = 0; i < grid_size; i++){
@@ -90,21 +110,23 @@ void start_world_simulation(){
 					} else if (world[i][j].type == WOLF){
 						world[i][j].starvation_period--;
 						world[i][j].breeding_period++;
+						
+						/* kill damn wolf
+						 * if(world[i][j].starvation_period <= 0){
+							cleanup_cell(&world[i][j]);
+						}*/
+						
 					}
 				}
 				world[i][j].moved = 0;
 			}
 		}
-		
+				
 		printf("*** BLACK %d ***\n", g + 1);		
 		print_world();
 	}
-}
+	
 
-void cleanup_cell(world_cell* cell){
-	cell->type = EMPTY;
-	cell->breeding_period = 0;
-	cell->starvation_period = 0;
 }
 
 void move_wolf(world_cell* cell, world_cell* dest_cell) {
@@ -214,6 +236,9 @@ int choose_cell(int i, int j, int p){
 	return c % p;
 }
 
+
+
+
 void update_world_cell(int x, int y){
 	world_cell *cell = &world[x][y];
 	world_cell** possible_cells;
@@ -276,8 +301,8 @@ void update_world_cell(int x, int y){
 }
 
 int add_cell(world_cell* aux_cell, world_cell** possible_cells, int bad_type){
-	if(aux_cell->type != bad_type && aux_cell->type != ICE){
-		*possible_cells = aux_cell;
+	if(aux_cell->type != bad_type && aux_cell->type != WOLF && aux_cell->type != ICE){
+		*possible_cells = &world[aux_cell->x][aux_cell->y];
 		return 1;
 	} else {
 		return 0;
@@ -286,31 +311,36 @@ int add_cell(world_cell* aux_cell, world_cell** possible_cells, int bad_type){
 
 world_cell** retrieve_possible_cells(world_cell* cell){
 	
+
+	
 	world_cell** possible_cells = malloc(4 * sizeof(world_cell*)); /*max possible positions*/
 	world_cell** tmp_cell = possible_cells;
-	int bad_type;
+	int bad_type = -1;
 
+	
+	printf("%c on %d %d retrieving possible cells with world:\n", cell->type, cell->x, cell->y);
+	print_prev_world();
 	memset(possible_cells, 0, 4 * sizeof(world_cell*));
 
-	if(cell->type == SQUIRREL)
-		bad_type = WOLF;
-	else
+	if(cell->type == WOLF)
 		bad_type = TREE;
+	else if (cell->type == SQUIRREL)
+		bad_type = SQUIRREL;
 
 	/*check top cell*/
-	if(cell->x != 0 && add_cell(&world[cell->x-1][cell->y], tmp_cell, bad_type))
+	if(cell->x != 0 && add_cell(&world_prev_gen[cell->x-1][cell->y], tmp_cell, bad_type))
 		tmp_cell++;
 	
 	/*check right cell*/
-	if(cell->y != grid_size-1 && add_cell(&world[cell->x][cell->y+1], tmp_cell, bad_type))
+	if(cell->y != grid_size-1 && add_cell(&world_prev_gen[cell->x][cell->y+1], tmp_cell, bad_type))
 		tmp_cell++;
 	
 	/*check bottom cell*/
-	if(cell->x != grid_size-1 && add_cell(&world[cell->x+1][cell->y], tmp_cell, bad_type))
+	if(cell->x != grid_size-1 && add_cell(&world_prev_gen[cell->x+1][cell->y], tmp_cell, bad_type))
 		tmp_cell++;
 	
 	/*check left cell */
-	if(cell->y != 0 && add_cell(&world[cell->x][cell->y-1], tmp_cell, bad_type))
+	if(cell->y != 0 && add_cell(&world_prev_gen[cell->x][cell->y-1], tmp_cell, bad_type))
 		tmp_cell++;
 	
 	return possible_cells;
@@ -342,6 +372,7 @@ void parse_input(char* filename){
 
 	if(fclose(input) == EOF)
 		exit(3);
+	
 }
 
 world_cell create_world_cell(int type,int breeding_period,int starvation_period, int x, int y){
@@ -355,12 +386,17 @@ world_cell create_world_cell(int type,int breeding_period,int starvation_period,
 		return *cell;
 }
 
+
 void initialize_world_array(int size){
 	int i = 0;
 	world = malloc(size * sizeof(world_cell*));
+	world_prev_gen = malloc(size * sizeof(world_cell*));
+
 	for(; i < size; i++){
 		int j = 0;
 		world[i] = malloc(size * sizeof(world_cell*));
+		world_prev_gen[i] = malloc(size * sizeof(world_cell*));
+
 		for(; j < size; j++)
 			world[i][j] = create_world_cell(EMPTY, 0, 0, i, j);
 	}
@@ -382,6 +418,27 @@ void print_world(){
 		printf("%d|", i);
 		for(; j < grid_size; j++)
 			printf("%c|", world[i][j].type);
+
+		printf("\n");
+	}
+}
+
+void print_prev_world(){
+	int i = 0;
+	
+	/*print header*/
+	printf("  ");
+	for(; i < grid_size; i++){
+		printf("%d ", i);
+	}
+	printf("\n");
+	
+	/*print world*/
+	for(i = 0; i < grid_size; i++){
+		int j = 0;
+		printf("%d|", i);
+		for(; j < grid_size; j++)
+			printf("%c|", world_prev_gen[i][j].type);
 
 		printf("\n");
 	}
