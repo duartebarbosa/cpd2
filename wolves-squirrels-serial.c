@@ -62,6 +62,24 @@ int main(int argc, char **argv){
 	return 0;
 }
 
+world_cell copy_cell(world_cell cell){
+	/*world_cell* copy = malloc(sizeof(world_cell));*/
+
+	/*copy->type = cell.type;
+	copy->breeding_period = cell.breeding_period;
+	copy->starvation_period = cell.starvation_period;
+	copy->x = cell.x;
+	copy->y = cell.y;
+	copy->moved = cell.moved;*/
+	world_cell copy = create_world_cell(cell.type, cell.breeding_period, cell.starvation_period, cell.x, cell.y);
+			/*printf("Copying cell (%c, %d, %d)\n", cell.type, cell.x, cell.y);*/
+
+	copy.moved = cell.moved;
+		/*printf("Copy complete. (%c, %d, %d)\n", copy.type, copy.x, copy.y);*/
+
+	return copy;
+}
+
 void cleanup_cell(world_cell* cell){
 	cell->type = EMPTY;
 	cell->breeding_period = 0;
@@ -70,10 +88,15 @@ void cleanup_cell(world_cell* cell){
 
 void copy_world(){
 	int i = 0;
-
 	for(; i < grid_size; i++){
-		memcpy(world_prev_gen[i], world[i], grid_size * sizeof(world_cell));
-
+		int j = 0;
+		for(; j < grid_size; j++){
+			/*printf("I: %d, J: %d\n", i, j);*/
+			/*			printf("(%d, %d) WORLD ac: %c %d %d\n", i,j,world[i][j].type, world[i][j].x, world[i][j].y);*/
+			world_prev_gen[i][j] = copy_cell(world[i][j]);
+			/*printf("(%d, %d) WORLD dc: %c %d %d\n", i,j,world[i][j].type, world[i][j].x, world[i][j].y);*/
+			/*printf("WORLD PREV GEN: %c %d %d\n", world_prev_gen[i][j].type, world_prev_gen[i][j].x, world_prev_gen[i][j].y);*/
+		}
 	}
 }
 
@@ -86,9 +109,11 @@ void start_world_simulation(){
 
 		/* update 'red' cells, think chessboard */
 		for(i = 0; i < grid_size; i++){
+
 			for (j = (i % 2) ? 1 : 0; j < grid_size; j += 2){
 				update_world_cell(i,j);
 			}
+			
 		}
 
 		printf("*** RED %d ***\n", g + 1);		
@@ -111,11 +136,9 @@ void start_world_simulation(){
 						world[i][j].starvation_period--;
 						world[i][j].breeding_period++;
 						
-						/* kill damn wolf
-						 * if(world[i][j].starvation_period <= 0){
+						if(world[i][j].starvation_period <= 0){
 							cleanup_cell(&world[i][j]);
-						}*/
-						
+						}
 					}
 				}
 				world[i][j].moved = 0;
@@ -147,8 +170,11 @@ void move_wolf(world_cell* cell, world_cell* dest_cell) {
 			if(cell->starvation_period == dest_cell->starvation_period){
 				dest_cell->breeding_period = (cell->breeding_period > dest_cell->breeding_period ? cell->breeding_period : dest_cell->breeding_period)/* + 1*/; /*FIXME: Should we increment the breeding period? */
 			} else {
+								printf("Wolves fighting! Wolf 1 (%d,%d) has %d and wolf 2 (%d,%d) has %d\n", cell->starvation_period, cell->x, cell->y, dest_cell->starvation_period, dest_cell->x, dest_cell->y);
+
 				dest_cell->breeding_period = (cell->starvation_period > dest_cell->starvation_period ? cell->breeding_period : dest_cell->breeding_period)/* + 1*/; /*FIXME: Should we increment the breeding period? */
 				dest_cell->starvation_period = (cell->starvation_period > dest_cell->starvation_period ? cell->starvation_period : dest_cell->starvation_period)/* + 1*/;
+				printf("New wolf: %d\n", dest_cell->starvation_period);
 			}
 			
 			/* clean cell */		
@@ -182,7 +208,7 @@ void move_squirrel(world_cell* cell, world_cell* dest_cell) {
 	} else if(dest_cell->type == SQUIRREL){
 		/* Squirrel moving to squirrel*/
 		dest_cell->type = cell->type;
-		dest_cell->breeding_period = MAX(cell->breeding_period, dest_cell->breeding_period) + 1; /*FIXME: Should we increment the breeding period? */
+		dest_cell->breeding_period = MAX(cell->breeding_period, dest_cell->breeding_period)/* + 1*/; /*FIXME: Should we increment the breeding period? */
 		
 		/* clean cell */
 		cleanup_cell(cell);
@@ -318,8 +344,8 @@ world_cell** retrieve_possible_cells(world_cell* cell){
 	int bad_type = -1;
 
 	
-	printf("%c on %d %d retrieving possible cells with world:\n", cell->type, cell->x, cell->y);
-	print_prev_world();
+	/*printf("%c on %d %d retrieving possible cells with world:\n", cell->type, cell->x, cell->y);*/
+	/*print_prev_world();*/
 	memset(possible_cells, 0, 4 * sizeof(world_cell*));
 
 	if(cell->type == WOLF)
@@ -394,12 +420,15 @@ void initialize_world_array(int size){
 
 	for(; i < size; i++){
 		int j = 0;
-		world[i] = malloc(size * sizeof(world_cell*));
-		world_prev_gen[i] = malloc(size * sizeof(world_cell*));
+		world[i] = malloc(size * sizeof(world_cell));
+		world_prev_gen[i] = malloc(size * sizeof(world_cell));
 
-		for(; j < size; j++)
+		for(; j < size; j++){
 			world[i][j] = create_world_cell(EMPTY, 0, 0, i, j);
+			world_prev_gen[i][j] = create_world_cell(EMPTY, 0, 0, i, j);
+		}
 	}
+	
 }
 
 void print_world(){
