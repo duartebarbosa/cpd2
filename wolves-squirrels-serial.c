@@ -23,7 +23,7 @@ typedef struct {
 
 /* Global Variables */
 world_cell **world;
-world_cell **world_prev_gen;
+world_cell **world_previous;
 unsigned short wolf_breeding_period;
 unsigned short squirrel_breeding_period;
 unsigned short wolf_starvation_period;
@@ -173,19 +173,19 @@ world_cell** retrieve_possible_cells(world_cell* cell){
 		bad_type = SQUIRREL;
 
 	/*check top cell*/
-	if(cell->x != 0 && add_cell(&world_prev_gen[cell->x-1][cell->y], tmp_cell, bad_type))
+	if(cell->x != 0 && add_cell(&world_previous[cell->x-1][cell->y], tmp_cell, bad_type))
 		tmp_cell++;
 	
 	/*check right cell*/
-	if(cell->y != grid_size-1 && add_cell(&world_prev_gen[cell->x][cell->y+1], tmp_cell, bad_type))
+	if(cell->y != grid_size-1 && add_cell(&world_previous[cell->x][cell->y+1], tmp_cell, bad_type))
 		tmp_cell++;
 	
 	/*check bottom cell*/
-	if(cell->x != grid_size-1 && add_cell(&world_prev_gen[cell->x+1][cell->y], tmp_cell, bad_type))
+	if(cell->x != grid_size-1 && add_cell(&world_previous[cell->x+1][cell->y], tmp_cell, bad_type))
 		tmp_cell++;
 	
 	/*check left cell */
-	if(cell->y != 0 && add_cell(&world_prev_gen[cell->x][cell->y-1], tmp_cell, bad_type))
+	if(cell->y != 0 && add_cell(&world_previous[cell->x][cell->y-1], tmp_cell, bad_type))
 		tmp_cell++;
 	
 	return possible_cells;
@@ -264,16 +264,16 @@ int add_cell(world_cell* aux_cell, world_cell** possible_cells, int bad_type){
 void initialize_world_array(unsigned short size){
 	unsigned short i = 0;
 	world = malloc(size * sizeof(world_cell*));
-	world_prev_gen = malloc(size * sizeof(world_cell*));
+	world_previous = malloc(size * sizeof(world_cell*));
 
 	for(; i < size; i++){
 		unsigned short j = 0;
 		world[i] = malloc(size * sizeof(world_cell));
-		world_prev_gen[i] = malloc(size * sizeof(world_cell));
+		world_previous[i] = malloc(size * sizeof(world_cell));
 
 		for(; j < size; j++){
 			create_world_cell(&world[i][j], EMPTY, 0, 0, i, j);
-			create_world_cell(&world_prev_gen[i][j], EMPTY, 0, 0, i, j);
+			create_world_cell(&world_previous[i][j], EMPTY, 0, 0, i, j);
 		}
 	}
 	
@@ -345,7 +345,7 @@ void print_prev_world(){
 		int j = 0;
 		printf("%d|", i);
 		for(; j < grid_size; j++)
-			printf("%c|", world_prev_gen[i][j].type);
+			printf("%c|", world_previous[i][j].type);
 
 		printf("\n");
 	}
@@ -359,17 +359,13 @@ void print_world_stats(){
 	printf("Number of generations: %d\n", number_of_generations);
 }
 
-void copy_cell(world_cell *source, world_cell* dest){
-
-}
-
 void copy_world(){
 	int i, j;
 	for(i = 0; i < grid_size; i++)
 		for(j = 0; j < grid_size; j++){
-			world_cell *source = &world[i][j], *dest = &world_prev_gen[i][j];
+			world_cell *source = &world[i][j], *dest = &world_previous[i][j];
 			create_world_cell(dest, source->type, source->breeding_period, source->starvation_period, source->x, source->y);
-			dest->moved = source->moved;
+			world_previous[i][j].moved = world[i][j].moved;
 		}
 }
 
