@@ -12,9 +12,8 @@
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
-
 typedef struct {
-	char type; /* Wolf, squirrel, tree, ice*/
+	char type; /* Wolf, squirrel, squirrel in tree, tree, ice, empty */
 	unsigned short breeding_period;
 	unsigned short starvation_period;
 	unsigned short x;
@@ -85,11 +84,9 @@ void cleanup_cell(world_cell* cell){
 
 void copy_world(){
 	int i, j;
-	for(i = 0; i < grid_size; i++){
-		for(j = 0; j < grid_size; j++){
+	for(i = 0; i < grid_size; i++)
+		for(j = 0; j < grid_size; j++)
 			 copy_cell(&world[i][j], &world_prev_gen[i][j]);
-		}
-	}
 }
 
 void start_world_simulation(){
@@ -100,24 +97,18 @@ void start_world_simulation(){
 		copy_world();
 
 		/* update 'red' cells, think chessboard */
-		for(i = 0; i < grid_size; i++){
-
-			for (j = (i % 2) ? 1 : 0; j < grid_size; j += 2){
+		for(i = 0; i < grid_size; i++)
+			for (j = (i % 2) ? 1 : 0; j < grid_size; j += 2)
 				update_world_cell(i,j);
-			}
-			
-		}
 
 		/*printf("*** RED %d ***\n", g + 1);		*/
 		/*print_world();*/
 		copy_world();
 
 		/* update 'black' cells, think chessboard */
-		for(i = 0; i < grid_size; i++){
-			for (j = (i % 2) ? 0 : 1; j < grid_size; j += 2){
+		for(i = 0; i < grid_size; i++)
+			for (j = (i % 2) ? 0 : 1; j < grid_size; j += 2)
 				update_world_cell(i,j);
-			}
-		}
 		
 		/*printf("*** BLACK %d ***\n", g + 1);*/		
 		/*print_world();*/
@@ -328,13 +319,10 @@ int add_cell(world_cell* aux_cell, world_cell** possible_cells, int bad_type){
 
 world_cell** retrieve_possible_cells(world_cell* cell){
 	
-
-	
 	world_cell** possible_cells = malloc(4 * sizeof(world_cell*)); /*max possible positions*/
 	world_cell** tmp_cell = possible_cells;
 	int bad_type = -1;
 
-	
 	/*printf("%c on %d %d retrieving possible cells with world:\n", cell->type, cell->x, cell->y);*/
 	/*print_prev_world();*/
 	memset(possible_cells, 0, 4 * sizeof(world_cell*));
@@ -395,12 +383,12 @@ void parse_input(char* filename){
 }
 
 void create_world_cell(world_cell* cell, char type,unsigned short breeding_period,unsigned short starvation_period, unsigned short x, unsigned short y){
-		cell->type = type;
-		cell->starvation_period = starvation_period;
-		cell->breeding_period = breeding_period;
-		cell->x = x;
-		cell->y = y;
-		cell->moved = 0;
+	cell->type = type;
+	cell->starvation_period = starvation_period;
+	cell->breeding_period = breeding_period;
+	cell->x = x;
+	cell->y = y;
+	cell->moved = 0;
 }
 
 
@@ -427,9 +415,9 @@ void print_world(){
 	
 	/*print header*/
 	printf("  ");
-	for(; i < grid_size; i++){
+	for(; i < grid_size; i++)
 		printf("%d ", i);
-	}
+
 	printf("\n");
 	
 	/*print world*/
@@ -448,9 +436,9 @@ void print_prev_world(){
 	
 	/*print header*/
 	printf("  ");
-	for(; i < grid_size; i++){
+	for(; i < grid_size; i++)
 		printf("%d ", i);
-	}
+
 	printf("\n");
 	
 	/*print world*/
