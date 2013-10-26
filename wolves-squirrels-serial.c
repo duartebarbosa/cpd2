@@ -360,16 +360,17 @@ void print_world_stats(){
 }
 
 void copy_cell(world_cell *source, world_cell* dest){
-	create_world_cell(dest, source->type, source->breeding_period, source->starvation_period, source->x, source->y);
-			/*printf("Copying cell (%c, %d, %d)\n", cell.type, cell.x, cell.y);*/
-	dest->moved = source->moved;
+
 }
 
 void copy_world(){
 	int i, j;
 	for(i = 0; i < grid_size; i++)
-		for(j = 0; j < grid_size; j++)
-			 copy_cell(&world[i][j], &world_prev_gen[i][j]);
+		for(j = 0; j < grid_size; j++){
+			world_cell *source = &world[i][j], *dest = &world_prev_gen[i][j];
+			create_world_cell(dest, source->type, source->breeding_period, source->starvation_period, source->x, source->y);
+			dest->moved = source->moved;
+		}
 }
 
 void start_world_simulation(){
