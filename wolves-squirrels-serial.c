@@ -223,9 +223,9 @@ void update_world_cell(unsigned short x, unsigned short y){
 					possible_cells_count++;
 				}
 				
-				if(squirrels_found > 0)
+				if(squirrels_found)
 					move(cell, squirrel_cells[choose_cell(cell->x, cell->y, squirrels_found)]);
-				else if (possible_cells_count > 0)
+				else if (possible_cells_count)
 					move(cell, possible_cells[choose_cell(cell->x, cell->y, possible_cells_count)]);
 
 				free(squirrel_cells);
@@ -243,7 +243,7 @@ void update_world_cell(unsigned short x, unsigned short y){
 				/*printf("Possible cell for squirrel in %d,%d is %d,%d\n", cell->x,cell->y, possible_cells[i]->x,possible_cells[i]->y);*/
 			}
 
-			if(possible_cells_count > 0)
+			if(possible_cells_count)
 				move(cell, possible_cells[choose_cell(cell->x, cell->y, possible_cells_count)]);
 			
 			break;
