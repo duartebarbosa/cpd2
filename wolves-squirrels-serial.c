@@ -65,7 +65,7 @@ void move_wolf(world_cell* cell, world_cell* dest_cell) {
 				/*printf("New wolf: %d\n", dest_cell->starvation_period);*/
 			} else {
 				/*printf("Wolves fighting! Wolf 1 (%d,%d) has %d and wolf 2 (%d,%d) has %d\n", cell->starvation_period, cell->x, cell->y, dest_cell->starvation_period, dest_cell->x, dest_cell->y);*/
-				dest_cell->breeding_period = (cell->starvation_period > dest_cell->starvation_period ? cell->breeding_period : dest_cell->breeding_period)/* + 1*/; /*FIXME: Should we increment the breeding period? */
+				dest_cell->breeding_period = (cell->starvation_period > dest_cell->starvation_period ? cell->breeding_period : dest_cell->breeding_period); /*FIXME: Should we increment the breeding period? */
 				dest_cell->starvation_period = MAX(cell->starvation_period, dest_cell->starvation_period);
 				/*printf("New wolf: %d\n", dest_cell->starvation_period);*/
 			}
@@ -76,8 +76,8 @@ void move_wolf(world_cell* cell, world_cell* dest_cell) {
 		default:
 			/* simple Wolf */
 			dest_cell->type = cell->type;
-			dest_cell->breeding_period = cell->breeding_period/* + 1*/;
-			dest_cell->starvation_period = cell->starvation_period/* - 1*/;
+			dest_cell->breeding_period = cell->breeding_period;
+			dest_cell->starvation_period = cell->starvation_period;
 			
 			/* clean cell or reproduce*/
 			if(dest_cell->breeding_period >= wolf_breeding_period){
@@ -96,28 +96,28 @@ void move_squirrel(world_cell* cell, world_cell* dest_cell) {
 	if(dest_cell->type == TREE){
 		/* Squirrel climbing tree */
 		dest_cell->type = SQUIRREL_IN_TREE;
-		dest_cell->breeding_period = cell->breeding_period/* + 1*/;
+		dest_cell->breeding_period = cell->breeding_period;
 
 		/* clean cell */
 		cleanup_cell(cell);
 	} else if(dest_cell->type == SQUIRREL){
 		/* Squirrel moving to squirrel*/
 		dest_cell->type = cell->type;
-		dest_cell->breeding_period = MAX(cell->breeding_period, dest_cell->breeding_period)/* + 1*/; /*FIXME: Should we increment the breeding period? */
+		dest_cell->breeding_period = MAX(cell->breeding_period, dest_cell->breeding_period); /*FIXME: Should we increment the breeding period? */
 		
 		/* clean cell */
 		cleanup_cell(cell);
 	} else if(dest_cell->type == SQUIRREL_IN_TREE){
 		/* squirrel eating squirrel on tree */
 		dest_cell->type = SQUIRREL_IN_TREE;
-		dest_cell->breeding_period = MAX(cell->breeding_period, dest_cell->breeding_period)/* + 1*/; /*FIXME: Should we increment the breeding period? */
+		dest_cell->breeding_period = MAX(cell->breeding_period, dest_cell->breeding_period); /*FIXME: Should we increment the breeding period? */
 		
 		/* clean cell */
 		cleanup_cell(cell);
 	} else if(cell->type == SQUIRREL_IN_TREE){
 		/* Squirrel leaving tree */
 		dest_cell->type = SQUIRREL;
-		dest_cell->breeding_period = cell->breeding_period/* + 1*/;
+		dest_cell->breeding_period = cell->breeding_period;
 		
 		/* clean cell */
 		cleanup_cell(cell);
@@ -131,7 +131,7 @@ void move_squirrel(world_cell* cell, world_cell* dest_cell) {
 	} else {
 		/* simple Squirrel */
 		dest_cell->type = cell->type;
-		dest_cell->breeding_period = cell->breeding_period/* + 1*/;
+		dest_cell->breeding_period = cell->breeding_period;
 		
 		/* clean cell or reproduce*/
 		cleanup_cell(cell);
@@ -166,12 +166,9 @@ char add_cell(world_cell* aux_cell, world_cell** possible_cells, char bad_type){
 
 world_cell** retrieve_possible_cells(world_cell* cell){
 	
-	world_cell** possible_cells = calloc(4, sizeof(world_cell*)); /*max possible positions*/
+	world_cell** possible_cells = calloc(4, sizeof(world_cell*)); /* 4: max possible positions */
 	world_cell** tmp_cell = possible_cells;
 	char bad_type = 0;
-
-	/*printf("%c on %d %d retrieving possible cells with world:\n", cell->type, cell->x, cell->y);*/
-	/*print_prev_world();*/
 
 	if(cell->type == WOLF)
 		bad_type = TREE;
@@ -201,9 +198,6 @@ void update_world_cell(unsigned short x, unsigned short y){
 	world_cell *cell = &world[x][y];
 	world_cell** possible_cells;
 	int count = 0;
-
-	/*if(cell->moved)
-		return;*/
 
 	/* perfom logic for each cell type */
 	switch(cell->type){
