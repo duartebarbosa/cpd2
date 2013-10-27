@@ -374,7 +374,7 @@ void start_world_simulation(){
 
 		/* update 'red' cells, think chessboard */
 		for(i = 0; i < grid_size; i++)
-			for (j = (i & 1) ? 1 : 0; j < grid_size; j += 2)
+			for (j = i & 1; j < grid_size; j += 2)
 				update_world_cell(i,j);
 
 		/*printf("*** RED %d ***\n", g + 1);		*/
@@ -383,7 +383,7 @@ void start_world_simulation(){
 
 		/* update 'black' cells, think chessboard */
 		for(i = 0; i < grid_size; i++)
-			for (j = (i & 1) ? 0 : 1; j < grid_size; j += 2)
+			for (j = !(i & 1); j < grid_size; j += 2)
 				update_world_cell(i,j);
 		
 		/*printf("*** BLACK %d ***\n", g + 1);*/		
