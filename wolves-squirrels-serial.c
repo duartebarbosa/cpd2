@@ -335,7 +335,7 @@ void start_world_simulation(){
 			for (j = i & 1; j < grid_size; j += 2)
 				update_world_cell(i,j);
 
-		/*printf("*** RED %d ***\n", g + 1);		*/
+		/*printf("*** RED %d ***\n", g + 1);*/
 		/*print_world(world);*/
 		copy_world();
 
@@ -344,7 +344,7 @@ void start_world_simulation(){
 			for (j = !(i & 1); j < grid_size; j += 2)
 				update_world_cell(i,j);
 		
-		/*printf("*** BLACK %d ***\n", g + 1);*/		
+		/*printf("*** BLACK %d ***\n", g + 1);*/
 		/*print_world(world);*/
 		
 		for(i = 0; i < grid_size; i++){
@@ -367,6 +367,18 @@ void start_world_simulation(){
 		}	
 	}
 	
+}
+
+void freemem(){
+	unsigned short i = 0;
+
+	for(; i < grid_size; i++){
+		free(world[i]);
+		free(world_previous[i]);
+	}
+
+	free(world);
+	free(world_previous);
 }
 
 int main(int argc, char **argv){
@@ -392,6 +404,8 @@ int main(int argc, char **argv){
 	#ifdef GETTIME
     printf("OpenMP time: %fs\n", omp_get_wtime() - start);
     #endif
-	
+    
+    freemem();
+
 	return 0;
 }

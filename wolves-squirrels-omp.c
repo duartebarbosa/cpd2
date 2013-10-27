@@ -372,6 +372,18 @@ void start_world_simulation(){
 	
 }
 
+void freemem(){
+	unsigned short i = 0;
+
+	for(; i < grid_size; i++){
+		free(world[i]);
+		free(world_previous[i]);
+	}
+
+	free(world);
+	free(world_previous);
+}
+
 int main(int argc, char **argv){
 
 	#ifdef GETTIME
@@ -395,6 +407,8 @@ int main(int argc, char **argv){
 	#ifdef GETTIME
     printf("OpenMP time: %fs\n", omp_get_wtime() - start);
     #endif
-	
+    
+    freemem();
+
 	return 0;
 }
