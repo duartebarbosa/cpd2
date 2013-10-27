@@ -207,7 +207,7 @@ void update_world_cell(unsigned short x, unsigned short y){
 
 	/* perfom logic for each cell type */
 	switch(cell->type){
-		case EMPTY || TREE || ICE:
+		case EMPTY:
 			break;
 		case WOLF: {
 				int squirrels_found = 0;
@@ -226,6 +226,7 @@ void update_world_cell(unsigned short x, unsigned short y){
 					move(cell, possible_cells[choose_cell(cell->x, cell->y, count--)]);
 
 				free(squirrel_cells);
+				free(possible_cells);
 				break;
 			}
 		case SQUIRREL: 
@@ -236,9 +237,10 @@ void update_world_cell(unsigned short x, unsigned short y){
 
 			if(count)
 				move(cell, possible_cells[choose_cell(cell->x, cell->y, count--)]);
-			
+	
+			free(possible_cells);
 			break;
-		default:
+		default:	/* we assume that trees and ice are less frequent than the animals */
 			break;
 	}
 }
