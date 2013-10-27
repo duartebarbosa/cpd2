@@ -215,12 +215,7 @@ void update_world_cell(unsigned short x, unsigned short y){
 
 				/*printf("Checking possible cells for wolf in %d,%d\n", cell->x,cell->y);*/
 				possible_cells = retrieve_possible_cells(cell);
-				for(; count < 4; count++){
-					if(possible_cells[count] == NULL)
-						break;
-
-					/*printf("Possible cell for wolf in %d,%d is %d,%d\n", cell->x,cell->y, possible_cells[i]->x,possible_cells[i]->y);*/
-
+				for(; count < 4 && possible_cells[count] == NULL; count++){
 					if(possible_cells[count]->type == SQUIRREL)
 						squirrel_cells[squirrels_found++] = possible_cells[count];
 				}
@@ -237,12 +232,7 @@ void update_world_cell(unsigned short x, unsigned short y){
 		case SQUIRREL_IN_TREE:
 			/*printf("Checking possible cells for squirrel in %d,%d\n", cell->x,cell->y);*/
 			possible_cells = retrieve_possible_cells(cell);
-			for(; count < 4; count++){
-				if(possible_cells[count] == NULL)
-					break;
-
-				/*printf("Possible cell for squirrel in %d,%d is %d,%d\n", cell->x,cell->y, possible_cells[i]->x,possible_cells[i]->y);*/
-			}
+			for(; count < 4 && possible_cells[count] == NULL; count++);
 
 			if(count)
 				move(cell, possible_cells[choose_cell(cell->x, cell->y, count--)]);
