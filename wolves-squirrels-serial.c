@@ -284,7 +284,7 @@ void parse_input(char* filename){
 		exit(3);
 }
 
-void print_world(){
+void print_world(world_cell ** world){
 	int i = 0;
 	
 	/*print header*/
@@ -300,27 +300,6 @@ void print_world(){
 		printf("%d|", i);
 		for(; j < grid_size; j++)
 			printf("%c|", world[i][j].type);
-
-		printf("\n");
-	}
-}
-
-void print_prev_world(){
-	int i = 0;
-	
-	/*print header*/
-	printf("  ");
-	for(; i < grid_size; i++)
-		printf("%d ", i);
-
-	printf("\n");
-	
-	/*print world*/
-	for(i = 0; i < grid_size; i++){
-		int j = 0;
-		printf("%d|", i);
-		for(; j < grid_size; j++)
-			printf("%c|", world_previous[i][j].type);
 
 		printf("\n");
 	}
@@ -357,7 +336,7 @@ void start_world_simulation(){
 				update_world_cell(i,j);
 
 		/*printf("*** RED %d ***\n", g + 1);		*/
-		/*print_world();*/
+		/*print_world(world);*/
 		copy_world();
 
 		/* update 'black' cells, think chessboard */
@@ -366,7 +345,7 @@ void start_world_simulation(){
 				update_world_cell(i,j);
 		
 		/*printf("*** BLACK %d ***\n", g + 1);*/		
-		/*print_world();*/
+		/*print_world(world);*/
 		
 		for(i = 0; i < grid_size; i++){
 			for (j = 0; j < grid_size; j ++){
@@ -408,7 +387,7 @@ int main(int argc, char **argv){
 	
 	start_world_simulation();
 
-	/*print_world();*/
+	/*print_world(world);*/
 
 	#ifdef GETTIME
     printf("OpenMP time: %fs\n", omp_get_wtime() - start);
