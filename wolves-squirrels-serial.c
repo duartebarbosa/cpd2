@@ -168,7 +168,7 @@ world_cell** retrieve_possible_cells(world_cell* cell){
 	
 	world_cell** possible_cells = calloc(4, sizeof(world_cell*)); /*max possible positions*/
 	world_cell** tmp_cell = possible_cells;
-	int bad_type = -1;
+	char bad_type = 0;
 
 	/*printf("%c on %d %d retrieving possible cells with world:\n", cell->type, cell->x, cell->y);*/
 	/*print_prev_world();*/
