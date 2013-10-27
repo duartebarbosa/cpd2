@@ -167,13 +167,12 @@ char add_cell(world_cell* aux_cell, world_cell** possible_cells, char bad_type){
 
 world_cell** retrieve_possible_cells(world_cell* cell){
 	
-	world_cell** possible_cells = malloc(4 * sizeof(world_cell*)); /*max possible positions*/
+	world_cell** possible_cells = calloc(4, sizeof(world_cell*)); /*max possible positions*/
 	world_cell** tmp_cell = possible_cells;
 	int bad_type = -1;
 
 	/*printf("%c on %d %d retrieving possible cells with world:\n", cell->type, cell->x, cell->y);*/
 	/*print_prev_world();*/
-	memset(possible_cells, 0, 4 * sizeof(world_cell*));
 
 	if(cell->type == WOLF)
 		bad_type = TREE;
