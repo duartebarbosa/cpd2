@@ -201,9 +201,7 @@ void update_world_cell(unsigned short x, unsigned short y){
 
 	/* perfom logic for each cell type */
 	switch(cell->type){
-		case EMPTY:
-		case TREE:
-		case ICE:
+		case EMPTY || TREE || ICE:
 			break;
 		case WOLF: {
 				int squirrels_found = 0;
