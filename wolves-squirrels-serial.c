@@ -173,7 +173,7 @@ world_cell** retrieve_possible_cells(world_cell* cell){
 		bad_type = SQUIRREL;
 
 	/*check top cell*/
-	if(cell->x != 0 && add_cell(&world_previous[cell->x-1][cell->y], tmp_cell, bad_type))
+	if(cell->x && add_cell(&world_previous[cell->x-1][cell->y], tmp_cell, bad_type))
 		tmp_cell++;
 	
 	/*check right cell*/
@@ -185,7 +185,7 @@ world_cell** retrieve_possible_cells(world_cell* cell){
 		tmp_cell++;
 	
 	/*check left cell */
-	if(cell->y != 0 && add_cell(&world_previous[cell->x][cell->y-1], tmp_cell, bad_type))
+	if(cell->y && add_cell(&world_previous[cell->x][cell->y-1], tmp_cell, bad_type))
 		tmp_cell++;
 	
 	return possible_cells;
