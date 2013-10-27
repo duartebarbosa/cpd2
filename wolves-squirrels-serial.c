@@ -258,7 +258,6 @@ int add_cell(world_cell* aux_cell, world_cell** possible_cells, int bad_type){
 		return 1;
 	}
 	return 0;
-
 }
 
 void initialize_world_array(unsigned short size){
@@ -275,8 +274,7 @@ void initialize_world_array(unsigned short size){
 			create_world_cell(&world[i][j], EMPTY, 0, 0, i, j);
 			create_world_cell(&world_previous[i][j], EMPTY, 0, 0, i, j);
 		}
-	}
-	
+	}	
 }
 
 void parse_input(char* filename){
@@ -299,14 +297,12 @@ void parse_input(char* filename){
 
 	while(fscanf(input,"%hu %hu %c\n",&i, &j, &type) == 3){ /*All arguments read succesfully*/
 		world[i][j].type = type;
-		if(type == WOLF){
+		if(type == WOLF)
 			world[i][j].starvation_period = wolf_starvation_period;
-		}
 	}
 
 	if(fclose(input) == EOF)
 		exit(3);
-	
 }
 
 void print_world(){
@@ -378,7 +374,7 @@ void start_world_simulation(){
 
 		/* update 'red' cells, think chessboard */
 		for(i = 0; i < grid_size; i++)
-			for (j = (i % 2) ? 1 : 0; j < grid_size; j += 2)
+			for (j = (i & 1) ? 1 : 0; j < grid_size; j += 2)
 				update_world_cell(i,j);
 
 		/*printf("*** RED %d ***\n", g + 1);		*/
@@ -387,7 +383,7 @@ void start_world_simulation(){
 
 		/* update 'black' cells, think chessboard */
 		for(i = 0; i < grid_size; i++)
-			for (j = (i % 2) ? 0 : 1; j < grid_size; j += 2)
+			for (j = (i & 1) ? 0 : 1; j < grid_size; j += 2)
 				update_world_cell(i,j);
 		
 		/*printf("*** BLACK %d ***\n", g + 1);*/		
