@@ -337,7 +337,7 @@ void start_world_simulation(){
 			for (j = i & 1; j < grid_size; j += 2)
 				update_world_cell(i,j);
 
-		/*printf("*** RED %d ***\n", g + 1);		*/
+		/*printf("*** RED %d ***\n", g + 1);*/
 		/*print_world(world);*/
 		copy_world();
 
@@ -347,9 +347,9 @@ void start_world_simulation(){
 			for (j = !(i & 1); j < grid_size; j += 2)
 				update_world_cell(i,j);
 		
-		/*printf("*** BLACK %d ***\n", g + 1);*/		
+		/*printf("*** BLACK %d ***\n", g + 1);*/
 		/*print_world(world);*/
-		
+		#pragma omp parallel for private(j)
 		for(i = 0; i < grid_size; i++){
 			for (j = 0; j < grid_size; j ++){
 				if (world[i][j].moved){
