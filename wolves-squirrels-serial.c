@@ -200,7 +200,7 @@ world_cell** retrieve_possible_cells(world_cell* cell){
 void update_world_cell(unsigned short x, unsigned short y){
 	world_cell *cell = &world[x][y];
 	world_cell** possible_cells;
-	int i = 0, possible_cells_count = 0;
+	int count = 0;
 
 	/*if(cell->moved)
 		return;*/
@@ -215,22 +215,20 @@ void update_world_cell(unsigned short x, unsigned short y){
 
 				/*printf("Checking possible cells for wolf in %d,%d\n", cell->x,cell->y);*/
 				possible_cells = retrieve_possible_cells(cell);
-				for(; i < 4; i++){
-					if(possible_cells[i] == NULL)
+				for(; count < 4; count++){
+					if(possible_cells[count] == NULL)
 						break;
 
 					/*printf("Possible cell for wolf in %d,%d is %d,%d\n", cell->x,cell->y, possible_cells[i]->x,possible_cells[i]->y);*/
 
-					if(possible_cells[i]->type == SQUIRREL)
-						squirrel_cells[squirrels_found++] = possible_cells[i];
-
-					possible_cells_count++;
+					if(possible_cells[count]->type == SQUIRREL)
+						squirrel_cells[squirrels_found++] = possible_cells[count];
 				}
 				
 				if(squirrels_found)
 					move(cell, squirrel_cells[choose_cell(cell->x, cell->y, squirrels_found)]);
-				else if (possible_cells_count)
-					move(cell, possible_cells[choose_cell(cell->x, cell->y, possible_cells_count)]);
+				else if (count)
+					move(cell, possible_cells[choose_cell(cell->x, cell->y, count--)]);
 
 				free(squirrel_cells);
 				break;
@@ -239,16 +237,15 @@ void update_world_cell(unsigned short x, unsigned short y){
 		case SQUIRREL_IN_TREE:
 			/*printf("Checking possible cells for squirrel in %d,%d\n", cell->x,cell->y);*/
 			possible_cells = retrieve_possible_cells(cell);
-			for(; i < 4; i++){
-				if(possible_cells[i] == NULL)
+			for(; count < 4; count++){
+				if(possible_cells[count] == NULL)
 					break;
 
-				possible_cells_count++;
 				/*printf("Possible cell for squirrel in %d,%d is %d,%d\n", cell->x,cell->y, possible_cells[i]->x,possible_cells[i]->y);*/
 			}
 
-			if(possible_cells_count)
-				move(cell, possible_cells[choose_cell(cell->x, cell->y, possible_cells_count)]);
+			if(count)
+				move(cell, possible_cells[choose_cell(cell->x, cell->y, count--)]);
 			
 			break;
 		default:
