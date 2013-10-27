@@ -32,8 +32,7 @@ unsigned short grid_size;
 
 void cleanup_cell(world_cell* cell){
 	cell->type = EMPTY;
-	cell->breeding_period = 0;
-	cell->starvation_period = 0;
+	cell->breeding_period = cell->starvation_period = 0;
 }
 
 void create_world_cell(world_cell* cell, char type,unsigned short breeding_period,unsigned short starvation_period, unsigned short x, unsigned short y){
