@@ -157,6 +157,14 @@ unsigned short choose_cell(unsigned short i, unsigned short j, unsigned short p)
 	return (i * grid_size + j) % p;
 }
 
+char add_cell(world_cell* aux_cell, world_cell** possible_cells, char bad_type){
+	if(aux_cell->type != bad_type && aux_cell->type != WOLF && aux_cell->type != ICE){
+		*possible_cells = &world[aux_cell->x][aux_cell->y];
+		return 1;
+	}
+	return 0;
+}
+
 world_cell** retrieve_possible_cells(world_cell* cell){
 	
 	world_cell** possible_cells = malloc(4 * sizeof(world_cell*)); /*max possible positions*/
@@ -248,14 +256,6 @@ void update_world_cell(unsigned short x, unsigned short y){
 		default:
 			break;
 	}
-}
-
-int add_cell(world_cell* aux_cell, world_cell** possible_cells, int bad_type){
-	if(aux_cell->type != bad_type && aux_cell->type != WOLF && aux_cell->type != ICE){
-		*possible_cells = &world[aux_cell->x][aux_cell->y];
-		return 1;
-	}
-	return 0;
 }
 
 void initialize_world_array(unsigned short size){
