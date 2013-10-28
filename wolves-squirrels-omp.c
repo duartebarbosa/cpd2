@@ -240,7 +240,7 @@ void update_world_cell(unsigned short x, unsigned short y){
 }
 
 void initialize_world_array(){
-	unsigned short i = 0;
+	register unsigned short i = 0;
 	world = malloc(grid_size * sizeof(world_cell*));
 	world_previous = malloc(grid_size * sizeof(world_cell*));
 
@@ -286,7 +286,7 @@ void parse_input(char* filename){
 }
 
 void print_world(world_cell ** world){
-	int i = 0;
+	register int i = 0;
 	
 	/*print header*/
 	printf("  ");
@@ -315,7 +315,7 @@ void print_world_stats(void){
 }
 
 void copy_world(void){
-	int i, j;
+	register int i, j;
 	#pragma omp parallel for private(j)
 	for(i = 0; i < grid_size; ++i)
 		for(j = 0; j < grid_size; ++j){
@@ -324,7 +324,7 @@ void copy_world(void){
 }
 
 void start_world_simulation(void){
-	int i, j;
+	register int i, j;
 	for(; number_of_generations > 0; --number_of_generations){
 		/*printf("---- Generation %d ----\n", g + 1);*/
 
@@ -372,7 +372,7 @@ void start_world_simulation(void){
 }
 
 void freemem(void){
-	unsigned short i = 0;
+	register unsigned short i = 0;
 
 	for(; i < grid_size; ++i){
 		free(world[i]);
