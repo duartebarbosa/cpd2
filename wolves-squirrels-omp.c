@@ -305,7 +305,7 @@ void print_world(world_cell ** world){
 	}
 }
 
-void print_world_stats(){
+void print_world_stats(void){
 	printf("Grid size: %d\n", grid_size);
 	printf("Wolf breeding period: %d\n", wolf_breeding_period);
 	printf("Wolf starvation period: %d\n", wolf_starvation_period);
@@ -313,7 +313,7 @@ void print_world_stats(){
 	printf("Number of generations: %d\n", number_of_generations);
 }
 
-void copy_world(){
+void copy_world(void){
 	int i, j;
 	#pragma omp parallel for private(j)
 	for(i = 0; i < grid_size; i++)
@@ -324,7 +324,7 @@ void copy_world(){
 		}
 }
 
-void start_world_simulation(){
+void start_world_simulation(void){
 	int i, j;
 	for(; number_of_generations > 0; --number_of_generations){
 		/*printf("---- Generation %d ----\n", g + 1);*/
@@ -372,7 +372,7 @@ void start_world_simulation(){
 	
 }
 
-void freemem(){
+void freemem(void){
 	unsigned short i = 0;
 
 	for(; i < grid_size; i++){
