@@ -92,7 +92,6 @@ void move_wolf(world_cell* cell, world_cell* dest_cell) {
 }
 
 void move_squirrel(world_cell* cell, world_cell* dest_cell) {
-	dest_cell->starvation_period = cell->starvation_period;
 	if(dest_cell->type == TREE){
 		/* Squirrel climbing tree */
 		dest_cell->type = SQUIRREL_IN_TREE;
