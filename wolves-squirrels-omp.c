@@ -259,6 +259,7 @@ void initialize_world_array(unsigned short size){
 
 void parse_input(char* filename){
 	unsigned short i, j;
+	char type;
 	FILE *input;
 
 	if((input = fopen(filename, "r+")) == NULL){
@@ -274,8 +275,9 @@ void parse_input(char* filename){
 	/*We only know the world size here*/
 	initialize_world_array(grid_size);
 
-	while(fscanf(input,"%hu %hu %c\n",&i, &j, &world[i][j].type) == 3){ /*All arguments read succesfully*/
-		if(world[i][j].type == WOLF)
+	while(fscanf(input,"%hu %hu %c\n",&i, &j, &type) == 3){ /*All arguments read succesfully*/
+		world[i][j].type = type;
+		if(type == WOLF)
 			world[i][j].starvation_period = wolf_starvation_period;
 	}
 
