@@ -239,17 +239,17 @@ void update_world_cell(unsigned short x, unsigned short y){
 	}
 }
 
-void initialize_world_array(unsigned short size){
+void initialize_world_array(){
 	unsigned short i = 0;
-	world = malloc(size * sizeof(world_cell*));
-	world_previous = malloc(size * sizeof(world_cell*));
+	world = malloc(grid_size * sizeof(world_cell*));
+	world_previous = malloc(grid_size * sizeof(world_cell*));
 
-	for(; i < size; ++i){
+	for(; i < grid_size; ++i){
 		unsigned short j = 0;
-		world[i] = calloc(size, sizeof(world_cell));
-		world_previous[i] = calloc(size, sizeof(world_cell));
+		world[i] = calloc(grid_size, sizeof(world_cell));
+		world_previous[i] = calloc(grid_size, sizeof(world_cell));
 
-		for(; j < size; ++j){
+		for(; j < grid_size; ++j){
 			world[i][j].type = world_previous[i][j].type = EMPTY;
 			world[i][j].x = world_previous[i][j].x = i;
 			world[i][j].y = world_previous[i][j].y = j;
@@ -273,7 +273,7 @@ void parse_input(char* filename){
 	}
 	
 	/*We only know the world size here*/
-	initialize_world_array(grid_size);
+	initialize_world_array();
 
 	while(fscanf(input,"%hu %hu %c\n",&i, &j, &type) == 3){ /*All arguments read succesfully*/
 		world[i][j].type = type;
