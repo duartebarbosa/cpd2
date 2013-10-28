@@ -52,7 +52,7 @@ void move_wolf(world_cell* cell, world_cell* dest_cell) {
 			dest_cell->breeding_period = cell->breeding_period;
 			dest_cell->starvation_period = wolf_starvation_period; 
 			
-			/* clean cell */		
+			/* clean cell */
 			cleanup_cell(cell);
 			break;
 		case WOLF:
@@ -70,7 +70,7 @@ void move_wolf(world_cell* cell, world_cell* dest_cell) {
 				/*printf("New wolf: %d\n", dest_cell->starvation_period);*/
 			}
 			
-			/* clean cell */		
+			/* clean cell */
 			cleanup_cell(cell);
 			break;
 		default:
@@ -82,9 +82,8 @@ void move_wolf(world_cell* cell, world_cell* dest_cell) {
 			/* clean cell or reproduce*/
 			if(dest_cell->breeding_period >= wolf_breeding_period){
 				cell->type = WOLF;
-				cell->breeding_period = 0;
+				cell->breeding_period = dest_cell->breeding_period = 0;
 				cell->starvation_period = wolf_starvation_period;
-				dest_cell->breeding_period = 0;
 				/*printf("Left a new wolf on %d %d, from wolf now on %d %d (%c)\n", cell->x, cell->y, dest_cell->x, dest_cell->y, dest_cell->type);*/
 			} else
 				cleanup_cell(cell);
