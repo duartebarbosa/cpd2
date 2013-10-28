@@ -37,11 +37,10 @@ void cleanup_cell(world_cell* cell){
 
 void create_world_cell(world_cell *cell, char type, unsigned short breeding_period, unsigned short starvation_period, unsigned short x, unsigned short y){
 	cell->type = type;
-	cell->starvation_period = starvation_period;
 	cell->breeding_period = breeding_period;
+	cell->starvation_period = starvation_period;
 	cell->x = x;
 	cell->y = y;
-	cell->moved = 0;
 }
 
 void move_wolf(world_cell* cell, world_cell* dest_cell) {
@@ -246,12 +245,13 @@ void initialize_world_array(unsigned short size){
 
 	for(; i < size; i++){
 		unsigned short j = 0;
-		world[i] = malloc(size * sizeof(world_cell));
-		world_previous[i] = malloc(size * sizeof(world_cell));
+		world[i] = calloc(size, sizeof(world_cell));
+		world_previous[i] = calloc(size, sizeof(world_cell));
 
 		for(; j < size; j++){
-			create_world_cell(&world[i][j], EMPTY, 0, 0, i, j);
-			create_world_cell(&world_previous[i][j], EMPTY, 0, 0, i, j);
+			world[i][j].type = world_previous[i][j].type = EMPTY;
+			world[i][j].x = world_previous[i][j].x = i;
+			world[i][j].y = world_previous[i][j].y = j;
 		}
 	}	
 }
