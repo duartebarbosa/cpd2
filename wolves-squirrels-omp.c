@@ -120,12 +120,11 @@ void move_squirrel(world_cell* cell, world_cell* dest_cell) {
 		
 		/* clean cell */
 		cleanup_cell(cell);
-		if(dest_cell->breeding_period >= squirrel_breeding_period)
+		if(dest_cell->breeding_period >= squirrel_breeding_period){
 			cell->type = SQUIRREL_IN_TREE;
-		else
+			dest_cell->breeding_period = 0;
+		} else
 			cell->type = TREE;
-
-		dest_cell->breeding_period = 0;
 		
 	} else {
 		/* simple Squirrel */
