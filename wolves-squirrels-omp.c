@@ -176,19 +176,19 @@ world_cell** retrieve_possible_cells(world_cell* cell){
 
 	/*check top cell*/
 	if(cell->x && add_cell(&world_previous[cell->x-1][cell->y], tmp_cell, bad_type))
-		tmp_cell++;
+		++tmp_cell;
 	
 	/*check right cell*/
 	if(cell->y != grid_size-1 && add_cell(&world_previous[cell->x][cell->y+1], tmp_cell, bad_type))
-		tmp_cell++;
+		++tmp_cell;
 	
 	/*check bottom cell*/
 	if(cell->x != grid_size-1 && add_cell(&world_previous[cell->x+1][cell->y], tmp_cell, bad_type))
-		tmp_cell++;
+		++tmp_cell;
 	
 	/*check left cell */
 	if(cell->y && add_cell(&world_previous[cell->x][cell->y-1], tmp_cell, bad_type))
-		tmp_cell++;
+		++tmp_cell;
 	
 	return possible_cells;
 }
