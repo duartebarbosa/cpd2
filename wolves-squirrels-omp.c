@@ -243,12 +243,12 @@ void initialize_world_array(unsigned short size){
 	world = malloc(size * sizeof(world_cell*));
 	world_previous = malloc(size * sizeof(world_cell*));
 
-	for(; i < size; i++){
+	for(; i < size; ++i){
 		unsigned short j = 0;
 		world[i] = calloc(size, sizeof(world_cell));
 		world_previous[i] = calloc(size, sizeof(world_cell));
 
-		for(; j < size; j++){
+		for(; j < size; ++j){
 			world[i][j].type = world_previous[i][j].type = EMPTY;
 			world[i][j].x = world_previous[i][j].x = i;
 			world[i][j].y = world_previous[i][j].y = j;
@@ -373,7 +373,7 @@ void start_world_simulation(void){
 void freemem(void){
 	unsigned short i = 0;
 
-	for(; i < grid_size; i++){
+	for(; i < grid_size; ++i){
 		free(world[i]);
 		free(world_previous[i]);
 	}
