@@ -209,7 +209,7 @@ void update_world_cell(unsigned short x, unsigned short y){
 
 				/*printf("Checking possible cells for wolf in %d,%d\n", cell->x,cell->y);*/
 				possible_cells = retrieve_possible_cells(cell);
-				for(; count < 4 && possible_cells[count] == NULL; count++){
+				for(; count < 4 && possible_cells[count] == NULL; ++count){
 					if(possible_cells[count]->type == SQUIRREL)
 						squirrel_cells[squirrels_found++] = possible_cells[count];
 				}
@@ -227,7 +227,7 @@ void update_world_cell(unsigned short x, unsigned short y){
 		case SQUIRREL_IN_TREE:
 			/*printf("Checking possible cells for squirrel in %d,%d\n", cell->x,cell->y);*/
 			possible_cells = retrieve_possible_cells(cell);
-			for(; count < 4 && possible_cells[count] == NULL; count++);
+			for(; count < 4 && possible_cells[count] == NULL; ++count);
 
 			if(count)
 				move(cell, possible_cells[choose_cell(cell->x, cell->y, count--)]);
@@ -290,16 +290,16 @@ void print_world(world_cell ** world){
 	
 	/*print header*/
 	printf("  ");
-	for(; i < grid_size; i++)
+	for(; i < grid_size; ++i)
 		printf("%d ", i);
 
 	printf("\n");
 	
 	/*print world*/
-	for(i = 0; i < grid_size; i++){
+	for(i = 0; i < grid_size; ++i){
 		int j = 0;
 		printf("%d|", i);
-		for(; j < grid_size; j++)
+		for(; j < grid_size; ++j)
 			printf("%c|", world[i][j].type);
 
 		printf("\n");
@@ -317,8 +317,8 @@ void print_world_stats(void){
 void copy_world(void){
 	int i, j;
 	#pragma omp parallel for private(j)
-	for(i = 0; i < grid_size; i++)
-		for(j = 0; j < grid_size; j++){
+	for(i = 0; i < grid_size; ++i)
+		for(j = 0; j < grid_size; ++j){
 			create_world_cell(&world[i][j], &world_previous[i][j]);
 		}
 }
@@ -332,9 +332,9 @@ void start_world_simulation(void){
 
 		/* update 'red' cells, think chessboard */
 		#pragma omp parallel for private(j)
-		for(i = 0; i < grid_size; i++)
+		for(i = 0; i < grid_size; ++i)
 			for (j = i & 1; j < grid_size; j += 2)
-				update_world_cell(i,j);
+				update_world_cell(i, j);
 
 		/*printf("*** RED %d ***\n", g + 1);*/
 		/*print_world(world);*/
@@ -342,15 +342,15 @@ void start_world_simulation(void){
 
 		/* update 'black' cells, think chessboard */
 		#pragma omp parallel for private(j)
-		for(i = 0; i < grid_size; i++)
+		for(i = 0; i < grid_size; ++i)
 			for (j = !(i & 1); j < grid_size; j += 2)
-				update_world_cell(i,j);
+				update_world_cell(i, j);
 		
 		/*printf("*** BLACK %d ***\n", g + 1);*/
 		/*print_world(world);*/
 		#pragma omp parallel for private(j)
-		for(i = 0; i < grid_size; i++){
-			for (j = 0; j < grid_size; j++){
+		for(i = 0; i < grid_size; ++i){
+			for (j = 0; j < grid_size; ++j){
 				if (world[i][j].moved){
 					if (world[i][j].type == SQUIRREL){
 						world[i][j].breeding_period++;
