@@ -35,12 +35,13 @@ void cleanup_cell(world_cell* cell){
 	cell->breeding_period = cell->starvation_period = 0;
 }
 
-void create_world_cell(world_cell *cell, char type, unsigned short breeding_period, unsigned short starvation_period, unsigned short x, unsigned short y){
-	cell->type = type;
-	cell->breeding_period = breeding_period;
-	cell->starvation_period = starvation_period;
-	cell->x = x;
-	cell->y = y;
+void create_world_cell(world_cell *cell, world_cell *source){
+	cell->type = source->type;
+	cell->breeding_period = source->breeding_period;
+	cell->starvation_period = source->starvation_period;
+	cell->x = source->x;
+	cell->y = source->y;
+	cell->moved = source->moved;
 }
 
 void move_wolf(world_cell* cell, world_cell* dest_cell) {
@@ -316,9 +317,7 @@ void copy_world(void){
 	#pragma omp parallel for private(j)
 	for(i = 0; i < grid_size; i++)
 		for(j = 0; j < grid_size; j++){
-			world_cell *source = &world[i][j], *dest = &world_previous[i][j];
-			create_world_cell(dest, source->type, source->breeding_period, source->starvation_period, source->x, source->y);
-			world_previous[i][j].moved = world[i][j].moved;
+			create_world_cell(&world[i][j], &world_previous[i][j]);
 		}
 }
 
@@ -349,7 +348,7 @@ void start_world_simulation(void){
 		/*print_world(world);*/
 		#pragma omp parallel for private(j)
 		for(i = 0; i < grid_size; i++){
-			for (j = 0; j < grid_size; j ++){
+			for (j = 0; j < grid_size; j++){
 				if (world[i][j].moved){
 					if (world[i][j].type == SQUIRREL){
 						world[i][j].breeding_period++;
