@@ -35,7 +35,7 @@ void cleanup_cell(world_cell* cell){
 	cell->breeding_period = cell->starvation_period = 0;
 }
 
-void create_world_cell(world_cell* cell, char type,unsigned short breeding_period,unsigned short starvation_period, unsigned short x, unsigned short y){
+void create_world_cell(world_cell *cell, char type, unsigned short breeding_period, unsigned short starvation_period, unsigned short x, unsigned short y){
 	cell->type = type;
 	cell->starvation_period = starvation_period;
 	cell->breeding_period = breeding_period;
@@ -325,8 +325,8 @@ void copy_world(){
 }
 
 void start_world_simulation(){
-	int g = 0, i, j;
-	for(; g < number_of_generations; g++){
+	int i, j;
+	for(; number_of_generations > 0; --number_of_generations){
 		/*printf("---- Generation %d ----\n", g + 1);*/
 
 		copy_world();
