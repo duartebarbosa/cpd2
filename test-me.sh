@@ -43,6 +43,7 @@ omp(){
 }
 
 mpi(){
+	mkdir -p instances/out/mpi
 	make clean mpi
 	sync
 
@@ -52,13 +53,13 @@ mpi(){
 			echo "_________________________________________"
 			echo -n "${FILES[i]}: "
 			time /usr/lib64/openmpi/bin/mpirun -np ${PROCESSES[j]} ./wolves-squirrels-mpi sampleDocInstances/in/${FILES[i]}.in
-			cmp sampleDocInstances/in/${FILES[i]}.out sampleDocInstances/out/${FILES[i]}.out
+			cmp instances/mpi/omp/${FILES[i]}.out instances/${FILES[i]}.out
 		done
 	done
 }
 
 omp_mpi(){
-
+	mkdir -p instances/out/mpi-omp
 	make clean mpi_omp
 	sync
 
@@ -71,7 +72,7 @@ omp_mpi(){
 				echo "_________________________________________"
 				echo -n "${FILES[i]}: "
 				time /usr/lib64/openmpi/bin/mpirun -np ${PROCESSES[k]} ./wolves-squirrels-mpi-omp sampleDocInstances/in/${FILES[i]}.in
-				cmp sampleDocInstances/in/${FILES[i]}.out sampleDocInstances/out/${FILES[i]}.out
+				cmp instances/out/mpi-omp/${FILES[i]}.out instances/${FILES[i]}.out
 			done
 		done
 	done
