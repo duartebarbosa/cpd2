@@ -2,7 +2,7 @@ GROUP = xx
 CC = gcc
 DEBUGFLAGS = -ansi -Wall -pedantic -g
 GOODFLAGS = -O3 -march=native
-TIMER = -DGETTIME=1
+TIMER = -DGETTIME=0
 
 all: clean build
 
@@ -35,7 +35,7 @@ clean:
 	rm -f wolves-squirrels-serial wolves-squirrels-omp wolves-squirrels-mpi wolves-squirrels-mpi *.o
 
 mrproper: clean
-	rm -rf log *.~ *~
+	rm -rf log/ *.~ *~ instances/out/
 
 zip_omp:
 	@-tar -czf g$(GROUP)omp.zip Makefile wolves-squirrels-serial.c wolves-squirrels-omp.c report.pdf

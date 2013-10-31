@@ -1,35 +1,43 @@
 #!/bin/bash
 # Bash script for running and compare project tests
 
-# we will have to change these (and the paths) once the project assignment comes to light
+WOLF_BREEDING=3
+WOLF_STARVATION=4
+SQUIRREL_BREEDING=4
+GENERATIONS=15
+
+CONFIG=""
+
 PROCESSES=( 1 2 4 8 )
 THREADS=( 1 2 4 8 )
-FILES=( ex5-1d ex10-2d ex1000-50d ex1M-100d ex100k-200-3 ex100k-200-4-mod )
+FILES=( ex3 world_10 world_100 world_1000 world_10000 )
 
 serial(){
+	mkdir -p instances/out/serial
 	make clean serial
 	sync
 
-	for((i=0; i < 6; i++)) do
+	for((i=0; i < 5; i++)) do
 		echo "_________________________________________"
-		echo "input: "${FILES[i]}
-		time ./wolves-squirrels-serial sampleDocInstances/in/${FILES[i]}.in
-		cmp sampleDocInstances/in/${FILES[i]}.out sampleDocInstances/out/${FILES[i]}.out
+		echo -n "${FILES[i]}: "
+		/usr/bin/time ./wolves-squirrels-serial instances/${FILES[i]}.in $CONFIG > instances/out/serial/${FILES[i]}.out
+		cmp instances/out/serial/${FILES[i]}.out instances/${FILES[i]}.out
 	done
 }
 
 omp(){
+	mkdir -p instances/out/omp
 	make clean omp
 	sync
 
 	for((j=0; j < 4; j++)) do
 		export OMP_NUM_THREADS=${THREADS[j]}
 		echo "threads: "${THREADS[j]}
-		for((i=0; i < 6; i++)) do
+		for((i=0; i < 5; i++)) do
 			echo "_________________________________________"
-			echo "input: "${FILES[i]}
-			time ./wolves-squirrels-omp sampleDocInstances/in/${FILES[i]}.in
-			cmp sampleDocInstances/in/${FILES[i]}.out sampleDocInstances/out/${FILES[i]}.out
+			echo -n "${FILES[i]}: "
+			/usr/bin/time ./wolves-squirrels-omp instances/${FILES[i]}.in $CONFIG > instances/out/omp/${FILES[i]}.out
+			cmp instances/out/omp/${FILES[i]}.out instances/${FILES[i]}.out
 		done
 	done
 }
@@ -40,9 +48,9 @@ mpi(){
 
 	for((j=0; j < 4; j++)) do
 		echo "processes: "${PROCESSES[j]}
-		for((i=0; i < 6; i++)) do
+		for((i=0; i < 5; i++)) do
 			echo "_________________________________________"
-			echo "input: "${FILES[i]}
+			echo -n "${FILES[i]}: "
 			time /usr/lib64/openmpi/bin/mpirun -np ${PROCESSES[j]} ./wolves-squirrels-mpi sampleDocInstances/in/${FILES[i]}.in
 			cmp sampleDocInstances/in/${FILES[i]}.out sampleDocInstances/out/${FILES[i]}.out
 		done
@@ -59,9 +67,9 @@ omp_mpi(){
 		for((j=0; j < 4; j++)) do
 			export OMP_NUM_THREADS=${THREADS[j]}
 			echo "threads: "${THREADS[j]}
-			for((i=0; i < 6; i++)) do
+			for((i=0; i < 5; i++)) do
 				echo "_________________________________________"
-				echo "input: "${FILES[i]}
+				echo -n "${FILES[i]}: "
 				time /usr/lib64/openmpi/bin/mpirun -np ${PROCESSES[k]} ./wolves-squirrels-mpi-omp sampleDocInstances/in/${FILES[i]}.in
 				cmp sampleDocInstances/in/${FILES[i]}.out sampleDocInstances/out/${FILES[i]}.out
 			done
@@ -74,7 +82,10 @@ start(){
 	make mrproper
 	clear
 	mkdir log
+	CONFIG="$WOLF_BREEDING $WOLF_STARVATION $SQUIRREL_BREEDING $GENERATIONS"
+	export TIME="%E"
 
+	echo "testing..."
 	(serial) &> log/serial.log
 	(omp) &> log/omp.log
 	(mpi) &> log/mpi.log
