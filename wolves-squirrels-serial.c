@@ -177,7 +177,6 @@ void move_squirrel(world_cell* cell, world_cell* dest_cell) {
 			}
 			
 			break;
-		break;
 		default:
 			if(dest_cell-> type != EMPTY){
 				printf("Shouldn't happen, squirrel moving to: %c\n", dest_cell->type);
