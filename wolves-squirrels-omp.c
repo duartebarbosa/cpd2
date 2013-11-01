@@ -106,6 +106,8 @@ void move_wolf(world_cell* cell, world_cell* dest_cell) {
 			cleanup_cell(cell);
 			break;
 		default:
+			if(dest_cell-> type != EMPTY)
+				printf("coco: %c\n", dest_cell->type);
 			/* simple Wolf */
 			dest_cell->type = cell->type;
 			dest_cell->breeding_period = cell->breeding_period;
@@ -121,6 +123,10 @@ void move_wolf(world_cell* cell, world_cell* dest_cell) {
 	}
 }
 
+/* FIX:
+	1) os esquilos estão a tentar comer os lobos
+	2) não se está a prever o caso do esquilo vir de uma árvore para qualquer outro sitio que nao empty
+*/
 void move_squirrel(world_cell* cell, world_cell* dest_cell) {
 	switch(dest_cell->type){
 		case TREE:
@@ -148,6 +154,8 @@ void move_squirrel(world_cell* cell, world_cell* dest_cell) {
 			cleanup_cell(cell);
 			break;
 		default:
+			if(dest_cell-> type != EMPTY)
+				printf("coco2: %c\n", dest_cell->type); /* why the hell is this throwin' up wolfs?! */
 			if(cell->type == SQUIRREL_IN_TREE){
 				/* Squirrel leaving tree */
 				dest_cell->type = SQUIRREL;
@@ -188,8 +196,8 @@ unsigned short choose_cell(unsigned short i, unsigned short j, unsigned short p)
 	return (i * grid_size + j) % p;
 }
 
-char add_cell(world_cell* aux_cell, world_cell** possible_cells, char bad_type){
-	if(aux_cell->type != bad_type && aux_cell->type != WOLF && aux_cell->type != ICE){
+char add_cell(world_cell* aux_cell, world_cell** possible_cells, char bad_type, char bad_type2){
+	if(aux_cell->type != bad_type && aux_cell->type != bad_type2 && aux_cell->type != ICE){
 		*possible_cells = &world[aux_cell->x][aux_cell->y];
 		return 1;
 	}
@@ -200,27 +208,29 @@ world_cell** retrieve_possible_cells(world_cell* cell){
 	
 	world_cell** possible_cells = calloc(4, sizeof(world_cell*)); /* 4: max possible positions */
 	world_cell** tmp_cell = possible_cells;
-	char bad_type = 0;
+	char bad_type = 0, bad_type2 = 0;
 
-	if(cell->type == WOLF)
+	if(cell->type == WOLF){
 		bad_type = TREE;
-	else if (cell->type == SQUIRREL)
+		bad_type2 = SQUIRREL_IN_TREE;
+	}
+	else /* Squirrels and squirrels in tree */
 		bad_type = WOLF;
 
 	/*check top cell*/
-	if(cell->x && add_cell(&world_previous[cell->x-1][cell->y], tmp_cell, bad_type))
+	if(cell->x && add_cell(&world_previous[cell->x-1][cell->y], tmp_cell, bad_type, bad_type2))
 		++tmp_cell;
 	
 	/*check right cell*/
-	if(cell->y != grid_size-1 && add_cell(&world_previous[cell->x][cell->y+1], tmp_cell, bad_type))
+	if(cell->y != grid_size-1 && add_cell(&world_previous[cell->x][cell->y+1], tmp_cell, bad_type, bad_type2))
 		++tmp_cell;
 	
 	/*check bottom cell*/
-	if(cell->x != grid_size-1 && add_cell(&world_previous[cell->x+1][cell->y], tmp_cell, bad_type))
+	if(cell->x != grid_size-1 && add_cell(&world_previous[cell->x+1][cell->y], tmp_cell, bad_type, bad_type2))
 		++tmp_cell;
 	
 	/*check left cell */
-	if(cell->y && add_cell(&world_previous[cell->x][cell->y-1], tmp_cell, bad_type))
+	if(cell->y && add_cell(&world_previous[cell->x][cell->y-1], tmp_cell, bad_type, bad_type2))
 		++tmp_cell;
 	
 	return possible_cells;
