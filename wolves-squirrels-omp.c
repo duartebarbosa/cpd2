@@ -82,6 +82,7 @@ void cleanup_cell(world_cell* cell){
 }
 
 void move_wolf(world_cell* cell, world_cell* dest_cell) {
+
 	dest_cell->moved = 1;
 	switch(dest_cell->type){
 		case SQUIRREL:
@@ -108,8 +109,9 @@ void move_wolf(world_cell* cell, world_cell* dest_cell) {
 			cleanup_cell(cell);
 			break;
 		default:
-			if(dest_cell-> type != EMPTY)
-				printf("coco: %c\n", dest_cell->type);
+			if(dest_cell-> type != EMPTY){
+				printf("Shouldn't happen, wolf moving to: %c\n", dest_cell->type); /* why the hell is this throwin' up wolfs?! */
+			}
 			/* simple Wolf */
 			dest_cell->type = cell->type;
 			dest_cell->breeding_period = cell->breeding_period;
@@ -125,40 +127,61 @@ void move_wolf(world_cell* cell, world_cell* dest_cell) {
 	}
 }
 
-/* FIX:
-	1) os esquilos estão a tentar comer os lobos
-	2) não se está a prever o caso do esquilo vir de uma árvore para qualquer outro sitio que nao empty
-*/
 void move_squirrel(world_cell* cell, world_cell* dest_cell) {
 	dest_cell->moved = 1;
 	switch(dest_cell->type){
 		case TREE:
-			/* Squirrel climbing tree */
-			dest_cell->type = SQUIRREL_IN_TREE;
 			dest_cell->breeding_period = cell->breeding_period;
+			dest_cell->type = SQUIRREL_IN_TREE;
 
-			/* clean cell */
-			cleanup_cell(cell);
+			if(cell->type == SQUIRREL_IN_TREE){
+				cell->type = TREE;		
+			} else {
+				cleanup_cell(cell);
+			}
+
 			break;
 		case SQUIRREL:
 			/* Squirrel moving to squirrel*/
-			dest_cell->type = cell->type;
+			
 			dest_cell->breeding_period = MAX(cell->breeding_period, dest_cell->breeding_period);
 
-			/* clean cell */
-			cleanup_cell(cell);
+			if(cell->type == SQUIRREL_IN_TREE){
+				dest_cell->type = SQUIRREL;
+				cell->type = TREE;		
+			} else {
+				dest_cell->type = cell->type;
+				cleanup_cell(cell);
+			}
+			
 			break;
 		case SQUIRREL_IN_TREE:
-			/* squirrel eating squirrel on tree */
 			dest_cell->type = SQUIRREL_IN_TREE;
 			dest_cell->breeding_period = MAX(cell->breeding_period, dest_cell->breeding_period);
 
-			/* clean cell */
-			cleanup_cell(cell);
+			if(cell->type == SQUIRREL_IN_TREE){
+				cell->type = TREE;		
+			} else {
+				cleanup_cell(cell);
+			}
+
 			break;
+		case WOLF:
+			/* Wolf eating squirrel */
+			dest_cell->starvation_period = wolf_starvation_period; 
+			
+			if(cell->type == SQUIRREL_IN_TREE){
+				cell->type = TREE;		
+			} else {
+				cleanup_cell(cell);
+			}
+			
+			break;
+		break;
 		default:
-			if(dest_cell-> type != EMPTY)
-				printf("coco2: %c\n", dest_cell->type); /* why the hell is this throwin' up wolfs?! */
+			if(dest_cell-> type != EMPTY){
+				printf("Shouldn't happen, squirrel moving to: %c\n", dest_cell->type);
+			}
 			if(cell->type == SQUIRREL_IN_TREE){
 				/* Squirrel leaving tree */
 				dest_cell->type = SQUIRREL;
@@ -187,9 +210,9 @@ void move_squirrel(world_cell* cell, world_cell* dest_cell) {
 	}
 }
 
-char add_cell(world_cell* aux_cell, world_cell** possible_cells, char bad_type, char bad_type2){
-	if(aux_cell->type != bad_type && aux_cell->type != bad_type2 && aux_cell->type != ICE){
-		*possible_cells = &world[GET_X(aux_cell->number)][GET_Y(aux_cell->number)];
+char add_cell(world_cell* aux_cell, world_cell** possible_cells, char bad_type){
+	if(aux_cell->type != bad_type && aux_cell->type != ICE && aux_cell->type != SQUIRREL_IN_TREE && aux_cell->type != WOLF){
+		*possible_cells = &world_previous[GET_X(aux_cell->number)][GET_Y(aux_cell->number)];
 		return 1;
 	}
 	return 0;
@@ -199,30 +222,29 @@ world_cell** retrieve_possible_cells(world_cell* cell){
 	
 	world_cell** possible_cells = calloc(4, sizeof(world_cell*)); /* 4: max possible positions */
 	world_cell** tmp_cell = possible_cells;
-	char bad_type = 0, bad_type2 = 0;
+	char bad_type = 0;
 	unsigned short x = GET_X(cell->number), y = GET_Y(cell->number);
 
 	if(cell->type == WOLF){
 		bad_type = TREE;
-		bad_type2 = SQUIRREL_IN_TREE;
 	}
 	else /* Squirrels and squirrels in tree */
-		bad_type = WOLF;
+		bad_type = SQUIRREL;
 
 	/*check top cell*/
-	if(x && add_cell(&world_previous[x-1][y], tmp_cell, bad_type, bad_type2))
+	if(x && add_cell(&world_previous[x-1][y], tmp_cell, bad_type))
 		++tmp_cell;
 	
 	/*check right cell*/
-	if(y != grid_size-1 && add_cell(&world_previous[x][y+1], tmp_cell, bad_type, bad_type2))
+	if(y != grid_size-1 && add_cell(&world_previous[x][y+1], tmp_cell, bad_type))
 		++tmp_cell;
 	
 	/*check bottom cell*/
-	if(x != grid_size-1 && add_cell(&world_previous[x+1][y], tmp_cell, bad_type, bad_type2))
+	if(x != grid_size-1 && add_cell(&world_previous[x+1][y], tmp_cell, bad_type))
 		++tmp_cell;
 	
 	/*check left cell */
-	if(y && add_cell(&world_previous[x][y-1], tmp_cell, bad_type, bad_type2))
+	if(y && add_cell(&world_previous[x][y-1], tmp_cell, bad_type))
 		++tmp_cell;
 	
 	return possible_cells;
@@ -241,17 +263,21 @@ void update_world_cell(unsigned short x, unsigned short y){
 				int squirrels_found = 0;
 				world_cell** squirrel_cells = malloc(4 * sizeof(world_cell*));
 
+	
 				possible_cells = retrieve_possible_cells(cell);
 				for(; count < 4 && possible_cells[count] != NULL; ++count){
 					if(possible_cells[count]->type == SQUIRREL)
 						squirrel_cells[squirrels_found++] = possible_cells[count];
 				}
 				
-				if(squirrels_found)
-					move_wolf(cell, squirrel_cells[CHOOSE_CELL(cell->number, squirrels_found)]);
-				else if (count)
-					move_wolf(cell, possible_cells[CHOOSE_CELL(cell->number, count--)]);
-
+				if(squirrels_found){
+					world_cell* prev_gen_dest_cell = squirrel_cells[CHOOSE_CELL(cell->number, squirrels_found)];
+					move_wolf(cell, &world[GET_X(prev_gen_dest_cell->number)][GET_Y(prev_gen_dest_cell->number)]);
+				} else if (count) {
+					world_cell* prev_gen_dest_cell = possible_cells[CHOOSE_CELL(cell->number, count--)];
+					move_wolf(cell, &world[GET_X(prev_gen_dest_cell->number)][GET_Y(prev_gen_dest_cell->number)]);
+				}
+				
 				free(squirrel_cells);
 				free(possible_cells);
 				break;
@@ -261,8 +287,10 @@ void update_world_cell(unsigned short x, unsigned short y){
 			possible_cells = retrieve_possible_cells(cell);
 			for(; count < 4 && possible_cells[count] != NULL; ++count);
 
-			if(count)
-				move_squirrel(cell, possible_cells[CHOOSE_CELL(cell->number, count--)]);
+			if (count) {
+				world_cell* prev_gen_dest_cell = possible_cells[CHOOSE_CELL(cell->number, count--)];
+				move_squirrel(cell, &world[GET_X(prev_gen_dest_cell->number)][GET_Y(prev_gen_dest_cell->number)]);
+			}
 	
 			free(possible_cells);
 			break;
@@ -294,17 +322,28 @@ void print_grid(world_cell ** world){
 
 void copy_world(void){
 	register int i;
+			
+	#pragma omp parallel for
 	for(i = 0; i < grid_size; ++i)
 		memcpy(world_previous[i], world[i], grid_size*sizeof(world_cell));
 }
 
+void print_world(){
+	int i = 0, j;
+	for(; i < grid_size; ++i){
+		for (j = 0; j < grid_size; ++j){
+			if(world[i][j].type != EMPTY)
+				printf("%d %d %c\n", i, j, world[i][j].type);
+		}
+	}
+}
 void start_world_simulation(void){
 	register int i, j;
 	for(; number_of_generations > 0; --number_of_generations){
 		copy_world();
 
 		/* update 'red' cells, think chessboard */
-		#pragma omp parallel for private(j)
+		#pragma omp parallel for private(j) schedule(dynamic)
 		for(i = 0; i < grid_size; ++i)
 			for (j = i & 1; j < grid_size; j += 2)
 				update_world_cell(i, j);
@@ -312,12 +351,16 @@ void start_world_simulation(void){
 		copy_world();
 
 		/* update 'black' cells, think chessboard */
-		#pragma omp parallel for private(j)
+		#pragma omp parallel for private(j) schedule(dynamic)
 		for(i = 0; i < grid_size; ++i)
 			for (j = !(i & 1); j < grid_size; j += 2)
 				update_world_cell(i, j);
 
-		#pragma omp parallel for private(j)
+		if(number_of_generations == 1){
+			print_grid(world);
+		}
+
+		#pragma omp parallel for private(j) schedule(dynamic)
 		for(i = 0; i < grid_size; ++i){
 			for (j = 0; j < grid_size; ++j){
 				if (world[i][j].moved){
@@ -339,15 +382,6 @@ void start_world_simulation(void){
 	
 }
 
-void print_world(){
-	int i = 0, j;
-	for(; i < grid_size; ++i){
-		for (j = 0; j < grid_size; ++j){
-			if(world[i][j].type != EMPTY)
-				printf("%d %d %c\n", i, j, world[i][j].type);
-		}
-	}
-}
 
 void freemem(void){
 	register unsigned short i = 0;
@@ -374,10 +408,10 @@ int main(int argc, char **argv){
 	number_of_generations = atoi(argv[5]);
 		
 	parse_input(argv[1]); /* Filename */
-	
+
 	start_world_simulation();
 
-	print_world();
+	//print_world();
 
 	#ifdef GETTIME
     printf("OpenMP time: %fs\n", omp_get_wtime() - start);
