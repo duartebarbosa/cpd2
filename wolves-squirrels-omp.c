@@ -13,6 +13,7 @@
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define GET_X(number) number/grid_size
 #define GET_Y(number) number%grid_size
+#define CHOOSE_CELL(number, p) number%p
 
 typedef struct {
 	char type; /* Wolf, squirrel, squirrel in tree, tree, ice, empty */
@@ -192,10 +193,6 @@ void move(world_cell* cell, world_cell* dest_cell) {
 		move_squirrel(cell, dest_cell);
 }
 
-unsigned short choose_cell(unsigned short number, unsigned short p){
-	return number % p;
-}
-
 char add_cell(world_cell* aux_cell, world_cell** possible_cells, char bad_type, char bad_type2){
 	if(aux_cell->type != bad_type && aux_cell->type != bad_type2 && aux_cell->type != ICE){
 		*possible_cells = &world[GET_X(aux_cell->number)][GET_Y(aux_cell->number)];
@@ -257,9 +254,9 @@ void update_world_cell(unsigned short x, unsigned short y){
 				}
 				
 				if(squirrels_found)
-					move(cell, squirrel_cells[choose_cell(cell->number, squirrels_found)]);
+					move(cell, squirrel_cells[CHOOSE_CELL(cell->number, squirrels_found)]);
 				else if (count)
-					move(cell, possible_cells[choose_cell(cell->number, count--)]);
+					move(cell, possible_cells[CHOOSE_CELL(cell->number, count--)]);
 
 				free(squirrel_cells);
 				free(possible_cells);
@@ -271,7 +268,7 @@ void update_world_cell(unsigned short x, unsigned short y){
 			for(; count < 4 && possible_cells[count] != NULL; ++count);
 
 			if(count)
-				move(cell, possible_cells[choose_cell(cell->number, count--)]);
+				move(cell, possible_cells[CHOOSE_CELL(cell->number, count--)]);
 	
 			free(possible_cells);
 			break;
