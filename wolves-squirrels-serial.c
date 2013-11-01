@@ -158,7 +158,7 @@ void move_squirrel(world_cell* cell, world_cell* dest_cell) {
 			break;
 		default:
 			if(dest_cell-> type != EMPTY)
-				printf("coco2: %c\n", dest_cell->type); /* why the hell is this throwin' up wolfs?! */
+				//printf("coco2: %c\n", dest_cell->type); /* why the hell is this throwin' up wolfs?! */
 			if(cell->type == SQUIRREL_IN_TREE){
 				/* Squirrel leaving tree */
 				dest_cell->type = SQUIRREL;
@@ -309,10 +309,13 @@ void start_world_simulation(void){
 
 		copy_world();
 
+
 		/* update 'black' cells, think chessboard */
 		for(i = 0; i < grid_size; ++i)
 			for (j = !(i & 1); j < grid_size; j += 2)
 				update_world_cell(i, j);
+
+
 
 		for(i = 0; i < grid_size; ++i){
 			for (j = 0; j < grid_size; ++j){
