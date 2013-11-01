@@ -20,7 +20,7 @@ serial: wolves-squirrels-serial.c
 	$(CC) $(GOODFLAGS) $(TIMER) -fopenmp wolves-squirrels-serial.c -o wolves-squirrels-serial
 
 omp: wolves-squirrels-omp.c
-	$(CC) $(DEBUGFLAGS) $(TIMER) -fopenmp wolves-squirrels-omp.c -o wolves-squirrels-omp
+	$(CC) $(GOODFLAGS) $(TIMER) -fopenmp wolves-squirrels-omp.c -o wolves-squirrels-omp
 
 mpi: wolves-squirrels-mpi.c
 	/usr/lib64/openmpi/bin/mpicc $(GOODFLAGS) $(TIMER) -g wolves-squirrels-mpi.c -o wolves-squirrels-mpi
