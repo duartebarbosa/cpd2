@@ -187,8 +187,8 @@ void move_squirrel(world_cell* cell, world_cell* dest_cell) {
 	}
 }
 
-char add_cell(world_cell* aux_cell, world_cell** possible_cells, char bad_type, char bad_type2){
-	if(aux_cell->type != bad_type && aux_cell->type != bad_type2 && aux_cell->type != ICE){
+char add_cell(world_cell* aux_cell, world_cell** possible_cells, char bad_type){
+	if(aux_cell->type != bad_type && aux_cell->type != ICE && aux_cell->type != SQUIRREL_IN_TREE && aux_cell->type != WOLF){
 		*possible_cells = &world[GET_X(aux_cell->number)][GET_Y(aux_cell->number)];
 		return 1;
 	}
@@ -199,30 +199,29 @@ world_cell** retrieve_possible_cells(world_cell* cell){
 	
 	world_cell** possible_cells = calloc(4, sizeof(world_cell*)); /* 4: max possible positions */
 	world_cell** tmp_cell = possible_cells;
-	char bad_type = 0, bad_type2 = 0;
+	char bad_type = 0;
 	unsigned short x = GET_X(cell->number), y = GET_Y(cell->number);
 
 	if(cell->type == WOLF){
 		bad_type = TREE;
-		bad_type2 = SQUIRREL_IN_TREE;
 	}
 	else /* Squirrels and squirrels in tree */
-		bad_type = WOLF;
+		bad_type = SQUIRREL;
 
 	/*check top cell*/
-	if(x && add_cell(&world_previous[x-1][y], tmp_cell, bad_type, bad_type2))
+	if(x && add_cell(&world_previous[x-1][y], tmp_cell, bad_type))
 		++tmp_cell;
 	
 	/*check right cell*/
-	if(y != grid_size-1 && add_cell(&world_previous[x][y+1], tmp_cell, bad_type, bad_type2))
+	if(y != grid_size-1 && add_cell(&world_previous[x][y+1], tmp_cell, bad_type))
 		++tmp_cell;
 	
 	/*check bottom cell*/
-	if(x != grid_size-1 && add_cell(&world_previous[x+1][y], tmp_cell, bad_type, bad_type2))
+	if(x != grid_size-1 && add_cell(&world_previous[x+1][y], tmp_cell, bad_type))
 		++tmp_cell;
 	
 	/*check left cell */
-	if(y && add_cell(&world_previous[x][y-1], tmp_cell, bad_type, bad_type2))
+	if(y && add_cell(&world_previous[x][y-1], tmp_cell, bad_type))
 		++tmp_cell;
 	
 	return possible_cells;
