@@ -361,6 +361,15 @@ void start_world_simulation(void){
 	
 }
 
+void print_world(){
+	int i = 0, j;
+	for(; i < grid_size; ++i){
+		for (j = 0; j < grid_size; ++j){
+			if(world[i][j].type != EMPTY)
+				printf("%d %d %c\n", i, j, world[i][j].type);
+		}
+	}
+}
 
 void freemem(void){
 	register unsigned short i = 0;
@@ -389,6 +398,8 @@ int main(int argc, char **argv){
 	parse_input(argv[1]); /* Filename */
 	
 	start_world_simulation();
+
+	print_world();
 
 	#ifdef GETTIME
     printf("OpenMP time: %fs\n", omp_get_wtime() - start);
