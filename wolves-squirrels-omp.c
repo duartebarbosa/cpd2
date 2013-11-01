@@ -16,8 +16,7 @@ typedef struct {
 	char type; /* Wolf, squirrel, squirrel in tree, tree, ice, empty */
 	unsigned short breeding_period;
 	unsigned short starvation_period;
-	unsigned short x;
-	unsigned short y;
+	unsigned short number;
 	char moved;
 } world_cell;
 
@@ -29,6 +28,14 @@ unsigned short squirrel_breeding_period;
 unsigned short wolf_starvation_period;
 unsigned short number_of_generations;
 unsigned short grid_size;
+
+inline unsigned short get_x(unsigned short number){
+	return number/grid_size;
+}
+
+inline unsigned short get_y(unsigned short number){
+	return number%grid_size;
+}
 
 void initialize_world_array(){
 	register unsigned short i = 0;
@@ -42,8 +49,7 @@ void initialize_world_array(){
 
 		for(; j < grid_size; ++j){
 			world[i][j].type = world_previous[i][j].type = EMPTY;
-			world[i][j].x = world_previous[i][j].x = i;
-			world[i][j].y = world_previous[i][j].y = j;
+			world[i][j].number = world_previous[i][j].number = i * grid_size + j;
 		}
 	}
 }
@@ -192,13 +198,13 @@ void move(world_cell* cell, world_cell* dest_cell) {
 		move_squirrel(cell, dest_cell);
 }
 
-unsigned short choose_cell(unsigned short i, unsigned short j, unsigned short p){
-	return (i * grid_size + j) % p;
+unsigned short choose_cell(unsigned short number, unsigned short p){
+	return number % p;
 }
 
 char add_cell(world_cell* aux_cell, world_cell** possible_cells, char bad_type, char bad_type2){
 	if(aux_cell->type != bad_type && aux_cell->type != bad_type2 && aux_cell->type != ICE){
-		*possible_cells = &world[aux_cell->x][aux_cell->y];
+		*possible_cells = &world[get_x(aux_cell->number)][get_y(aux_cell->number)];
 		return 1;
 	}
 	return 0;
@@ -218,19 +224,19 @@ world_cell** retrieve_possible_cells(world_cell* cell){
 		bad_type = WOLF;
 
 	/*check top cell*/
-	if(cell->x && add_cell(&world_previous[cell->x-1][cell->y], tmp_cell, bad_type, bad_type2))
+	if(get_x(cell->number) && add_cell(&world_previous[get_x(cell->number)-1][get_y(cell->number)], tmp_cell, bad_type, bad_type2))
 		++tmp_cell;
 	
 	/*check right cell*/
-	if(cell->y != grid_size-1 && add_cell(&world_previous[cell->x][cell->y+1], tmp_cell, bad_type, bad_type2))
+	if(get_y(cell->number) != grid_size-1 && add_cell(&world_previous[get_x(cell->number)][get_y(cell->number)+1], tmp_cell, bad_type, bad_type2))
 		++tmp_cell;
 	
 	/*check bottom cell*/
-	if(cell->x != grid_size-1 && add_cell(&world_previous[cell->x+1][cell->y], tmp_cell, bad_type, bad_type2))
+	if(get_x(cell->number) != grid_size-1 && add_cell(&world_previous[get_x(cell->number)+1][get_y(cell->number)], tmp_cell, bad_type, bad_type2))
 		++tmp_cell;
 	
 	/*check left cell */
-	if(cell->y && add_cell(&world_previous[cell->x][cell->y-1], tmp_cell, bad_type, bad_type2))
+	if(get_y(cell->number) && add_cell(&world_previous[get_x(cell->number)][get_y(cell->number)-1], tmp_cell, bad_type, bad_type2))
 		++tmp_cell;
 	
 	return possible_cells;
@@ -256,9 +262,9 @@ void update_world_cell(unsigned short x, unsigned short y){
 				}
 				
 				if(squirrels_found)
-					move(cell, squirrel_cells[choose_cell(cell->x, cell->y, squirrels_found)]);
+					move(cell, squirrel_cells[choose_cell(cell->number, squirrels_found)]);
 				else if (count)
-					move(cell, possible_cells[choose_cell(cell->x, cell->y, count--)]);
+					move(cell, possible_cells[choose_cell(cell->number, count--)]);
 
 				free(squirrel_cells);
 				free(possible_cells);
@@ -270,7 +276,7 @@ void update_world_cell(unsigned short x, unsigned short y){
 			for(; count < 4 && possible_cells[count] != NULL; ++count);
 
 			if(count)
-				move(cell, possible_cells[choose_cell(cell->x, cell->y, count--)]);
+				move(cell, possible_cells[choose_cell(cell->number, count--)]);
 	
 			free(possible_cells);
 			break;
@@ -304,8 +310,7 @@ void copy_world_cell(world_cell *cell, world_cell *source){
 	cell->type = source->type;
 	cell->breeding_period = source->breeding_period;
 	cell->starvation_period = source->starvation_period;
-	cell->x = source->x;
-	cell->y = source->y;
+	cell->number = source->number;
 	cell->moved = source->moved;
 }
 
