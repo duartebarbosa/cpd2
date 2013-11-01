@@ -30,18 +30,55 @@ unsigned short wolf_starvation_period;
 unsigned short number_of_generations;
 unsigned short grid_size;
 
+void initialize_world_array(){
+	register unsigned short i = 0;
+	world = malloc(grid_size * sizeof(world_cell*));
+	world_previous = malloc(grid_size * sizeof(world_cell*));
+
+	for(; i < grid_size; ++i){
+		unsigned short j = 0;
+		world[i] = calloc(grid_size, sizeof(world_cell));
+		world_previous[i] = calloc(grid_size, sizeof(world_cell));
+
+		for(; j < grid_size; ++j){
+			world[i][j].type = world_previous[i][j].type = EMPTY;
+			world[i][j].x = world_previous[i][j].x = i;
+			world[i][j].y = world_previous[i][j].y = j;
+		}
+	}
+}
+
+void parse_input(char* filename){
+	unsigned short i, j;
+	char type;
+	FILE *input;
+
+	if((input = fopen(filename, "r+")) == NULL){
+		printf("No such file %s\n", filename);
+		exit(1);
+	}
+
+	if(!fscanf(input, "%hu\n", &grid_size)){
+		printf("No grid size.");
+		exit(2);
+	}
+
+	/*We only know the world size here*/
+	initialize_world_array();
+
+	while(fscanf(input,"%hu %hu %c\n",&i, &j, &type) == 3){ /*All arguments read succesfully*/
+		world[i][j].type = type;
+		if(type == WOLF)
+			world[i][j].starvation_period = wolf_starvation_period;
+	}
+
+	if(fclose(input) == EOF)
+		exit(3);
+}
+
 void cleanup_cell(world_cell* cell){
 	cell->type = EMPTY;
 	cell->breeding_period = cell->starvation_period = 0;
-}
-
-void create_world_cell(world_cell *cell, world_cell *source){
-	cell->type = source->type;
-	cell->breeding_period = source->breeding_period;
-	cell->starvation_period = source->starvation_period;
-	cell->x = source->x;
-	cell->y = source->y;
-	cell->moved = source->moved;
 }
 
 void move_wolf(world_cell* cell, world_cell* dest_cell) {
@@ -206,7 +243,7 @@ void update_world_cell(unsigned short x, unsigned short y){
 
 				/*printf("Checking possible cells for wolf in %d,%d\n", cell->x,cell->y);*/
 				possible_cells = retrieve_possible_cells(cell);
-				for(; count < 4 && possible_cells[count] == NULL; ++count){
+				for(; count < 4 && possible_cells[count] != NULL; ++count){
 					if(possible_cells[count]->type == SQUIRREL)
 						squirrel_cells[squirrels_found++] = possible_cells[count];
 				}
@@ -224,7 +261,7 @@ void update_world_cell(unsigned short x, unsigned short y){
 		case SQUIRREL_IN_TREE:
 			/*printf("Checking possible cells for squirrel in %d,%d\n", cell->x,cell->y);*/
 			possible_cells = retrieve_possible_cells(cell);
-			for(; count < 4 && possible_cells[count] == NULL; ++count);
+			for(; count < 4 && possible_cells[count] != NULL; ++count);
 
 			if(count)
 				move(cell, possible_cells[choose_cell(cell->x, cell->y, count--)]);
@@ -236,53 +273,7 @@ void update_world_cell(unsigned short x, unsigned short y){
 	}
 }
 
-void initialize_world_array(){
-	register unsigned short i = 0;
-	world = malloc(grid_size * sizeof(world_cell*));
-	world_previous = malloc(grid_size * sizeof(world_cell*));
-
-	for(; i < grid_size; ++i){
-		unsigned short j = 0;
-		world[i] = calloc(grid_size, sizeof(world_cell));
-		world_previous[i] = calloc(grid_size, sizeof(world_cell));
-
-		for(; j < grid_size; ++j){
-			world[i][j].type = world_previous[i][j].type = EMPTY;
-			world[i][j].x = world_previous[i][j].x = i;
-			world[i][j].y = world_previous[i][j].y = j;
-		}
-	}	
-}
-
-void parse_input(char* filename){
-	unsigned short i, j;
-	char type;
-	FILE *input;
-
-	if((input = fopen(filename, "r+")) == NULL){
-		printf("No such file %s\n", filename);
-		exit(1);
-	}
-
-	if(!fscanf(input, "%hu\n", &grid_size)){
-		printf("No grid size.");
-		exit(2);
-	}
-	
-	/*We only know the world size here*/
-	initialize_world_array();
-
-	while(fscanf(input,"%hu %hu %c\n",&i, &j, &type) == 3){ /*All arguments read succesfully*/
-		world[i][j].type = type;
-		if(type == WOLF)
-			world[i][j].starvation_period = wolf_starvation_period;
-	}
-
-	if(fclose(input) == EOF)
-		exit(3);
-}
-
-void print_world(world_cell ** world){
+void print_grid(world_cell ** world){
 	register int i = 0;
 	
 	/*print header*/
@@ -303,12 +294,13 @@ void print_world(world_cell ** world){
 	}
 }
 
-void print_world_stats(void){
-	printf("Grid size: %d\n", grid_size);
-	printf("Wolf breeding period: %d\n", wolf_breeding_period);
-	printf("Wolf starvation period: %d\n", wolf_starvation_period);
-	printf("Squirrel breeding period: %d\n", squirrel_breeding_period);
-	printf("Number of generations: %d\n", number_of_generations);
+void copy_world_cell(world_cell *cell, world_cell *source){
+	cell->type = source->type;
+	cell->breeding_period = source->breeding_period;
+	cell->starvation_period = source->starvation_period;
+	cell->x = source->x;
+	cell->y = source->y;
+	cell->moved = source->moved;
 }
 
 void copy_world(void){
@@ -316,7 +308,7 @@ void copy_world(void){
 	#pragma omp parallel for private(j)
 	for(i = 0; i < grid_size; ++i)
 		for(j = 0; j < grid_size; ++j){
-			create_world_cell(&world[i][j], &world_previous[i][j]);
+			copy_world_cell(&world_previous[i][j], &world[i][j]);
 		}
 }
 
@@ -327,6 +319,7 @@ void start_world_simulation(void){
 
 		copy_world();
 
+		/*print_grid(world);*/
 		/* update 'red' cells, think chessboard */
 		#pragma omp parallel for private(j)
 		for(i = 0; i < grid_size; ++i)
@@ -334,7 +327,7 @@ void start_world_simulation(void){
 				update_world_cell(i, j);
 
 		/*printf("*** RED %d ***\n", g + 1);*/
-		/*print_world(world);*/
+
 		copy_world();
 
 		/* update 'black' cells, think chessboard */
@@ -344,7 +337,7 @@ void start_world_simulation(void){
 				update_world_cell(i, j);
 		
 		/*printf("*** BLACK %d ***\n", g + 1);*/
-		/*print_world(world);*/
+		/*print_grid(world);*/
 		#pragma omp parallel for private(j)
 		for(i = 0; i < grid_size; ++i){
 			for (j = 0; j < grid_size; ++j){
@@ -367,6 +360,7 @@ void start_world_simulation(void){
 	}
 	
 }
+
 
 void freemem(void){
 	register unsigned short i = 0;
@@ -394,11 +388,7 @@ int main(int argc, char **argv){
 		
 	parse_input(argv[1]); /* Filename */
 	
-	print_world_stats();
-	
 	start_world_simulation();
-
-	/*print_world(world);*/
 
 	#ifdef GETTIME
     printf("OpenMP time: %fs\n", omp_get_wtime() - start);
