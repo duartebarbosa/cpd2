@@ -19,7 +19,7 @@ typedef struct {
 	char type; /* Wolf, squirrel, squirrel in tree, tree, ice, empty */
 	unsigned short breeding_period;
 	unsigned short starvation_period;
-	unsigned short number;
+	unsigned int number;
 	char moved;
 } world_cell;
 
