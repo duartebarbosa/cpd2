@@ -82,6 +82,7 @@ void cleanup_cell(world_cell* cell){
 }
 
 void move_wolf(world_cell* cell, world_cell* dest_cell) {
+	dest_cell->moved = 1;
 	switch(dest_cell->type){
 		case SQUIRREL:
 			/* Wolf eating squirrel */
@@ -129,6 +130,7 @@ void move_wolf(world_cell* cell, world_cell* dest_cell) {
 	2) não se está a prever o caso do esquilo vir de uma árvore para qualquer outro sitio que nao empty
 */
 void move_squirrel(world_cell* cell, world_cell* dest_cell) {
+	dest_cell->moved = 1;
 	switch(dest_cell->type){
 		case TREE:
 			/* Squirrel climbing tree */
@@ -183,14 +185,6 @@ void move_squirrel(world_cell* cell, world_cell* dest_cell) {
 					cell->type = EMPTY;
 			}
 	}
-}
-
-void move(world_cell* cell, world_cell* dest_cell) {
-	dest_cell->moved = 1;
-	if(cell->type == WOLF)
-		move_wolf(cell, dest_cell);
-	else
-		move_squirrel(cell, dest_cell);
 }
 
 char add_cell(world_cell* aux_cell, world_cell** possible_cells, char bad_type, char bad_type2){
@@ -254,9 +248,9 @@ void update_world_cell(unsigned short x, unsigned short y){
 				}
 				
 				if(squirrels_found)
-					move(cell, squirrel_cells[CHOOSE_CELL(cell->number, squirrels_found)]);
+					move_wolf(cell, squirrel_cells[CHOOSE_CELL(cell->number, squirrels_found)]);
 				else if (count)
-					move(cell, possible_cells[CHOOSE_CELL(cell->number, count--)]);
+					move_wolf(cell, possible_cells[CHOOSE_CELL(cell->number, count--)]);
 
 				free(squirrel_cells);
 				free(possible_cells);
@@ -268,7 +262,7 @@ void update_world_cell(unsigned short x, unsigned short y){
 			for(; count < 4 && possible_cells[count] != NULL; ++count);
 
 			if(count)
-				move(cell, possible_cells[CHOOSE_CELL(cell->number, count--)]);
+				move_squirrel(cell, possible_cells[CHOOSE_CELL(cell->number, count--)]);
 	
 			free(possible_cells);
 			break;
