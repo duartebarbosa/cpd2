@@ -2,7 +2,7 @@ GROUP = xx
 CC = gcc
 DEBUGFLAGS = -ansi -Wall -pedantic -g
 GOODFLAGS = -O3 -march=native
-TIMER = -DGETTIME=0
+TIMER = -DGETTIME
 
 all: clean build
 
