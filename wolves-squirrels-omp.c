@@ -29,7 +29,7 @@ world_cell **world_previous;
 unsigned short wolf_breeding_period;
 unsigned short squirrel_breeding_period;
 unsigned short wolf_starvation_period;
-unsigned short number_of_generations;
+unsigned int number_of_generations;
 unsigned short grid_size;
 
 void initialize_world_array(){
@@ -83,6 +83,9 @@ void cleanup_cell(world_cell* cell){
 
 void move_wolf(world_cell* cell, world_cell* dest_cell) {
 
+	
+	#pragma omp critical (move)
+	{
 	dest_cell->moved = 1;
 	switch(dest_cell->type){
 		case SQUIRREL:
@@ -118,17 +121,20 @@ void move_wolf(world_cell* cell, world_cell* dest_cell) {
 			dest_cell->starvation_period = cell->starvation_period;
 			
 			/* clean cell or reproduce*/
-			if(dest_cell->breeding_period >= wolf_breeding_period){
+			if(dest_cell->breeding_period >= wolf_breeding_period && dest_cell->starvation_period > 1){
 				cell->type = WOLF;
 				cell->breeding_period = dest_cell->breeding_period = 0;
 				cell->starvation_period = wolf_starvation_period;
 			} else
 				cleanup_cell(cell);
 	}
+	}
 }
 
 void move_squirrel(world_cell* cell, world_cell* dest_cell) {
-	dest_cell->moved = 1;
+#pragma omp critical (move)
+{
+dest_cell->moved = 1;
 	switch(dest_cell->type){
 		case TREE:
 			dest_cell->breeding_period = cell->breeding_period;
@@ -208,6 +214,7 @@ void move_squirrel(world_cell* cell, world_cell* dest_cell) {
 					cell->type = EMPTY;
 			}
 	}
+}
 }
 
 char add_cell(world_cell* aux_cell, world_cell** possible_cells, char bad_type){
@@ -299,7 +306,7 @@ void update_world_cell(unsigned short x, unsigned short y){
 	}
 }
 
-void print_grid(world_cell ** world){
+void print_grid(){
 	register int i = 0;
 	
 	/*print header*/
@@ -343,7 +350,7 @@ void start_world_simulation(void){
 		copy_world();
 
 		/* update 'red' cells, think chessboard */
-		#pragma omp parallel for private(j) schedule(dynamic)
+		#pragma omp parallel for private(j)
 		for(i = 0; i < grid_size; ++i)
 			for (j = i & 1; j < grid_size; j += 2)
 				update_world_cell(i, j);
@@ -351,16 +358,16 @@ void start_world_simulation(void){
 		copy_world();
 
 		/* update 'black' cells, think chessboard */
-		#pragma omp parallel for private(j) schedule(dynamic)
+		#pragma omp parallel for private(j)
 		for(i = 0; i < grid_size; ++i)
 			for (j = !(i & 1); j < grid_size; j += 2)
 				update_world_cell(i, j);
 
 		if(number_of_generations == 1){
-			print_grid(world);
+			print_world();
 		}
 
-		#pragma omp parallel for private(j) schedule(dynamic)
+		#pragma omp parallel for private(j) 
 		for(i = 0; i < grid_size; ++i){
 			for (j = 0; j < grid_size; ++j){
 				if (world[i][j].moved){
