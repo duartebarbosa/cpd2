@@ -299,7 +299,7 @@ void update_world_cell(unsigned short x, unsigned short y){
 	}
 }
 
-void print_grid(world_cell ** world){
+void print_grid(){
 	register int i = 0;
 	
 	/*print header*/
@@ -343,7 +343,7 @@ void start_world_simulation(void){
 		copy_world();
 
 		/* update 'red' cells, think chessboard */
-		#pragma omp parallel for private(j) schedule(dynamic)
+		#pragma omp parallel for private(j)
 		for(i = 0; i < grid_size; ++i)
 			for (j = i & 1; j < grid_size; j += 2)
 				update_world_cell(i, j);
@@ -351,16 +351,16 @@ void start_world_simulation(void){
 		copy_world();
 
 		/* update 'black' cells, think chessboard */
-		#pragma omp parallel for private(j) schedule(dynamic)
+		#pragma omp parallel for private(j)
 		for(i = 0; i < grid_size; ++i)
 			for (j = !(i & 1); j < grid_size; j += 2)
 				update_world_cell(i, j);
 
 		if(number_of_generations == 1){
-			print_grid(world);
+			print_grid();
 		}
 
-		#pragma omp parallel for private(j) schedule(dynamic)
+		#pragma omp parallel for private(j)
 		for(i = 0; i < grid_size; ++i){
 			for (j = 0; j < grid_size; ++j){
 				if (world[i][j].moved){
