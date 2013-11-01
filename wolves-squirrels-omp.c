@@ -205,7 +205,7 @@ world_cell** retrieve_possible_cells(world_cell* cell){
 	if(cell->type == WOLF)
 		bad_type = TREE;
 	else if (cell->type == SQUIRREL)
-		bad_type = SQUIRREL;
+		bad_type = WOLF;
 
 	/*check top cell*/
 	if(cell->x && add_cell(&world_previous[cell->x-1][cell->y], tmp_cell, bad_type))
