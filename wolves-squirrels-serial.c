@@ -38,13 +38,13 @@ void initialize_world_array(){
 	world_previous = malloc(grid_size * sizeof(world_cell*));
 
 	for(; i < grid_size; ++i){
-		unsigned short j = 0;
+		unsigned short j = 0, partial_number = i * grid_size;
 		world[i] = calloc(grid_size, sizeof(world_cell));
 		world_previous[i] = calloc(grid_size, sizeof(world_cell));
 
 		for(; j < grid_size; ++j){
 			world[i][j].type = world_previous[i][j].type = EMPTY;
-			world[i][j].number = world_previous[i][j].number = i * grid_size + j;
+			world[i][j].number = world_previous[i][j].number = partial_number + j;
 		}
 	}
 }
