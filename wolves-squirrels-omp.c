@@ -292,21 +292,10 @@ void print_grid(world_cell ** world){
 	}
 }
 
-void copy_world_cell(world_cell *cell, world_cell *source){
-	cell->type = source->type;
-	cell->breeding_period = source->breeding_period;
-	cell->starvation_period = source->starvation_period;
-	cell->number = source->number;
-	cell->moved = source->moved;
-}
-
 void copy_world(void){
-	register int i, j;
-	#pragma omp parallel for private(j)
+	register int i;
 	for(i = 0; i < grid_size; ++i)
-		for(j = 0; j < grid_size; ++j){
-			copy_world_cell(&world_previous[i][j], &world[i][j]);
-		}
+		memcpy(world_previous[i], world[i], grid_size*sizeof(world_cell));
 }
 
 void start_world_simulation(void){
