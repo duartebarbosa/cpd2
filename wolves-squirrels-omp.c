@@ -83,6 +83,9 @@ void cleanup_cell(world_cell* cell){
 
 void move_wolf(world_cell* cell, world_cell* dest_cell) {
 
+	
+	#pragma omp critical (move)
+	{
 	dest_cell->moved = 1;
 	switch(dest_cell->type){
 		case SQUIRREL:
@@ -125,10 +128,13 @@ void move_wolf(world_cell* cell, world_cell* dest_cell) {
 			} else
 				cleanup_cell(cell);
 	}
+	}
 }
 
 void move_squirrel(world_cell* cell, world_cell* dest_cell) {
-	dest_cell->moved = 1;
+#pragma omp critical (move)
+{
+dest_cell->moved = 1;
 	switch(dest_cell->type){
 		case TREE:
 			dest_cell->breeding_period = cell->breeding_period;
@@ -208,6 +214,7 @@ void move_squirrel(world_cell* cell, world_cell* dest_cell) {
 					cell->type = EMPTY;
 			}
 	}
+}
 }
 
 char add_cell(world_cell* aux_cell, world_cell** possible_cells, char bad_type){
@@ -357,10 +364,10 @@ void start_world_simulation(void){
 				update_world_cell(i, j);
 
 		if(number_of_generations == 1){
-			print_grid();
+			print_world();
 		}
 
-		#pragma omp parallel for private(j)
+		#pragma omp parallel for private(j) 
 		for(i = 0; i < grid_size; ++i){
 			for (j = 0; j < grid_size; ++j){
 				if (world[i][j].moved){
@@ -371,7 +378,6 @@ void start_world_simulation(void){
 						world[i][j].breeding_period++;
 						/* wolf dies of starvation */
 						if(world[i][j].starvation_period <= 0){
-							printf("Wolf dying in cell %d %d on GEN %d\n", i, j, number_of_generations);
 							cleanup_cell(&world[i][j]);
 						}
 					}

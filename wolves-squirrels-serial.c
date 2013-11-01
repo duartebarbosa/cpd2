@@ -352,7 +352,7 @@ void start_world_simulation(void){
 				update_world_cell(i, j);
 
 		if(number_of_generations == 1){
-			print_grid(world);
+			print_world();
 		}
 
 		for(i = 0; i < grid_size; ++i){
@@ -365,7 +365,6 @@ void start_world_simulation(void){
 						world[i][j].breeding_period++;
 						/* wolf dies of starvation */
 						if(world[i][j].starvation_period <= 0){
-							printf("Wolf dying in cell %d %d on GEN %d\n", i, j, number_of_generations);
 							cleanup_cell(&world[i][j]);
 						}
 					}
