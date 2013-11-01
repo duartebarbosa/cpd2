@@ -8,7 +8,7 @@
 #define ICE 'i'
 #define TREE 't'
 #define SQUIRREL_IN_TREE '$'
-#define EMPTY ' ' /*We can just print as an empty space when printing the world*/
+#define EMPTY ' '
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
@@ -63,7 +63,6 @@ void parse_input(char* filename){
 		exit(2);
 	}
 
-	/*We only know the world size here*/
 	initialize_world_array();
 
 	while(fscanf(input,"%hu %hu %c\n",&i, &j, &type) == 3){ /*All arguments read succesfully*/
@@ -97,14 +96,10 @@ void move_wolf(world_cell* cell, world_cell* dest_cell) {
 			dest_cell->type = cell->type;
 			/* same starvation */			
 			if(cell->starvation_period == dest_cell->starvation_period){
-				/*printf("Wolves fighting wih same starvation!\n");*/
 				dest_cell->breeding_period = MAX(cell->breeding_period, dest_cell->breeding_period);
-				/*printf("New wolf: %d\n", dest_cell->starvation_period);*/
 			} else {
-				/*printf("Wolves fighting! Wolf 1 (%d,%d) has %d and wolf 2 (%d,%d) has %d\n", cell->starvation_period, cell->x, cell->y, dest_cell->starvation_period, dest_cell->x, dest_cell->y);*/
-				dest_cell->breeding_period = (cell->starvation_period > dest_cell->starvation_period ? cell->breeding_period : dest_cell->breeding_period); /*FIXME: Should we increment the breeding period? */
+				dest_cell->breeding_period = (cell->starvation_period > dest_cell->starvation_period ? cell->breeding_period : dest_cell->breeding_period);
 				dest_cell->starvation_period = MAX(cell->starvation_period, dest_cell->starvation_period);
-				/*printf("New wolf: %d\n", dest_cell->starvation_period);*/
 			}
 			
 			/* clean cell */
@@ -121,60 +116,63 @@ void move_wolf(world_cell* cell, world_cell* dest_cell) {
 				cell->type = WOLF;
 				cell->breeding_period = dest_cell->breeding_period = 0;
 				cell->starvation_period = wolf_starvation_period;
-				/*printf("Left a new wolf on %d %d, from wolf now on %d %d (%c)\n", cell->x, cell->y, dest_cell->x, dest_cell->y, dest_cell->type);*/
 			} else
 				cleanup_cell(cell);
 	}
 }
 
 void move_squirrel(world_cell* cell, world_cell* dest_cell) {
-	if(dest_cell->type == TREE){
-		/* Squirrel climbing tree */
-		dest_cell->type = SQUIRREL_IN_TREE;
-		dest_cell->breeding_period = cell->breeding_period;
+	switch(dest_cell->type){
+		case TREE:
+			/* Squirrel climbing tree */
+			dest_cell->type = SQUIRREL_IN_TREE;
+			dest_cell->breeding_period = cell->breeding_period;
 
-		/* clean cell */
-		cleanup_cell(cell);
-	} else if(dest_cell->type == SQUIRREL){
-		/* Squirrel moving to squirrel*/
-		dest_cell->type = cell->type;
-		dest_cell->breeding_period = MAX(cell->breeding_period, dest_cell->breeding_period); /*FIXME: Should we increment the breeding period? */
-		
-		/* clean cell */
-		cleanup_cell(cell);
-	} else if(dest_cell->type == SQUIRREL_IN_TREE){
-		/* squirrel eating squirrel on tree */
-		dest_cell->type = SQUIRREL_IN_TREE;
-		dest_cell->breeding_period = MAX(cell->breeding_period, dest_cell->breeding_period); /*FIXME: Should we increment the breeding period? */
-		
-		/* clean cell */
-		cleanup_cell(cell);
-	} else if(cell->type == SQUIRREL_IN_TREE){
-		/* Squirrel leaving tree */
-		dest_cell->type = SQUIRREL;
-		dest_cell->breeding_period = cell->breeding_period;
-		
-		/* clean cell */
-		cleanup_cell(cell);
-		if(dest_cell->breeding_period >= squirrel_breeding_period){
-			cell->type = SQUIRREL_IN_TREE;
-			dest_cell->breeding_period = 0;
-		} else
-			cell->type = TREE;
-		
-	} else {
-		/* simple Squirrel */
-		dest_cell->type = cell->type;
-		dest_cell->breeding_period = cell->breeding_period;
-		
-		/* clean cell or reproduce*/
-		cleanup_cell(cell);
-		if(dest_cell->breeding_period >= squirrel_breeding_period){
-			cell->type = SQUIRREL;
-			dest_cell->breeding_period = 0;
-		} else
-			cell->type = EMPTY;
+			/* clean cell */
+			cleanup_cell(cell);
+			break;
+		case SQUIRREL:
+			/* Squirrel moving to squirrel*/
+			dest_cell->type = cell->type;
+			dest_cell->breeding_period = MAX(cell->breeding_period, dest_cell->breeding_period);
 
+			/* clean cell */
+			cleanup_cell(cell);
+			break;
+		case SQUIRREL_IN_TREE:
+			/* squirrel eating squirrel on tree */
+			dest_cell->type = SQUIRREL_IN_TREE;
+			dest_cell->breeding_period = MAX(cell->breeding_period, dest_cell->breeding_period);
+
+			/* clean cell */
+			cleanup_cell(cell);
+			break;
+		default:
+			if(cell->type == SQUIRREL_IN_TREE){
+				/* Squirrel leaving tree */
+				dest_cell->type = SQUIRREL;
+				dest_cell->breeding_period = cell->breeding_period;
+
+				/* clean cell */
+				cleanup_cell(cell);
+				if(dest_cell->breeding_period >= squirrel_breeding_period){
+					cell->type = SQUIRREL_IN_TREE;
+					dest_cell->breeding_period = 0;
+				} else
+					cell->type = TREE;
+			} else { /* destination is empty */
+				/* simple Squirrel */
+				dest_cell->type = cell->type;
+				dest_cell->breeding_period = cell->breeding_period;
+
+				/* clean cell or reproduce*/
+				cleanup_cell(cell);
+				if(dest_cell->breeding_period >= squirrel_breeding_period){
+					cell->type = SQUIRREL;
+					dest_cell->breeding_period = 0;
+				} else
+					cell->type = EMPTY;
+			}
 	}
 }
 
@@ -207,7 +205,7 @@ world_cell** retrieve_possible_cells(world_cell* cell){
 	if(cell->type == WOLF)
 		bad_type = TREE;
 	else if (cell->type == SQUIRREL)
-		bad_type = SQUIRREL;
+		bad_type = WOLF;
 
 	/*check top cell*/
 	if(cell->x && add_cell(&world_previous[cell->x-1][cell->y], tmp_cell, bad_type))
@@ -241,7 +239,6 @@ void update_world_cell(unsigned short x, unsigned short y){
 				int squirrels_found = 0;
 				world_cell** squirrel_cells = malloc(4 * sizeof(world_cell*));
 
-				/*printf("Checking possible cells for wolf in %d,%d\n", cell->x,cell->y);*/
 				possible_cells = retrieve_possible_cells(cell);
 				for(; count < 4 && possible_cells[count] != NULL; ++count){
 					if(possible_cells[count]->type == SQUIRREL)
@@ -259,7 +256,6 @@ void update_world_cell(unsigned short x, unsigned short y){
 			}
 		case SQUIRREL: 
 		case SQUIRREL_IN_TREE:
-			/*printf("Checking possible cells for squirrel in %d,%d\n", cell->x,cell->y);*/
 			possible_cells = retrieve_possible_cells(cell);
 			for(; count < 4 && possible_cells[count] != NULL; ++count);
 
@@ -314,17 +310,12 @@ void copy_world(void){
 void start_world_simulation(void){
 	register int i, j;
 	for(; number_of_generations > 0; --number_of_generations){
-		/*printf("---- Generation %d ----\n", g + 1);*/
-
 		copy_world();
 
-		/*print_grid(world);*/
 		/* update 'red' cells, think chessboard */
 		for(i = 0; i < grid_size; ++i)
 			for (j = i & 1; j < grid_size; j += 2)
 				update_world_cell(i, j);
-
-		/*printf("*** RED %d ***\n", g + 1);*/
 
 		copy_world();
 
@@ -332,9 +323,7 @@ void start_world_simulation(void){
 		for(i = 0; i < grid_size; ++i)
 			for (j = !(i & 1); j < grid_size; j += 2)
 				update_world_cell(i, j);
-		
-		/*printf("*** BLACK %d ***\n", g + 1);*/
-		/*print_grid(world);*/
+
 		for(i = 0; i < grid_size; ++i){
 			for (j = 0; j < grid_size; ++j){
 				if (world[i][j].moved){
@@ -343,10 +332,9 @@ void start_world_simulation(void){
 					} else if (world[i][j].type == WOLF){
 						world[i][j].starvation_period--;
 						world[i][j].breeding_period++;
-						
+						/* wolf dies of starvation */
 						if(world[i][j].starvation_period <= 0){
 							cleanup_cell(&world[i][j]);
-							/*printf("Bye Wolf (%d, %d)\n", i, j);*/
 						}
 					}
 				}
