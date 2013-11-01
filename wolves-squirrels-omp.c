@@ -108,8 +108,9 @@ void move_wolf(world_cell* cell, world_cell* dest_cell) {
 			cleanup_cell(cell);
 			break;
 		default:
-			if(dest_cell-> type != EMPTY)
-				printf("coco: %c\n", dest_cell->type);
+			if(dest_cell-> type != EMPTY){
+				printf("Shouldn't happen, wolf moving to: %c\n", dest_cell->type); /* why the hell is this throwin' up wolfs?! */
+			}
 			/* simple Wolf */
 			dest_cell->type = cell->type;
 			dest_cell->breeding_period = cell->breeding_period;
@@ -133,32 +134,45 @@ void move_squirrel(world_cell* cell, world_cell* dest_cell) {
 	dest_cell->moved = 1;
 	switch(dest_cell->type){
 		case TREE:
-			/* Squirrel climbing tree */
-			dest_cell->type = SQUIRREL_IN_TREE;
 			dest_cell->breeding_period = cell->breeding_period;
+			dest_cell->type = SQUIRREL_IN_TREE;
 
-			/* clean cell */
-			cleanup_cell(cell);
+			if(cell->type == SQUIRREL_IN_TREE){
+				cell->type = TREE;		
+			} else {
+				cleanup_cell(cell);
+			}
+
 			break;
 		case SQUIRREL:
 			/* Squirrel moving to squirrel*/
-			dest_cell->type = cell->type;
+			
 			dest_cell->breeding_period = MAX(cell->breeding_period, dest_cell->breeding_period);
 
-			/* clean cell */
-			cleanup_cell(cell);
+			if(cell->type == SQUIRREL_IN_TREE){
+				dest_cell->type = SQUIRREL;
+				cell->type = TREE;		
+			} else {
+				dest_cell->type = cell->type;
+				cleanup_cell(cell);
+			}
+			
 			break;
 		case SQUIRREL_IN_TREE:
-			/* squirrel eating squirrel on tree */
 			dest_cell->type = SQUIRREL_IN_TREE;
 			dest_cell->breeding_period = MAX(cell->breeding_period, dest_cell->breeding_period);
 
-			/* clean cell */
-			cleanup_cell(cell);
+			if(cell->type == SQUIRREL_IN_TREE){
+				cell->type = TREE;		
+			} else {
+				cleanup_cell(cell);
+			}
+
 			break;
 		default:
-			if(dest_cell-> type != EMPTY)
-				//printf("coco2: %c\n", dest_cell->type); /* why the hell is this throwin' up wolfs?! */
+			if(dest_cell-> type != EMPTY){
+				printf("Shouldn't happen, squirrel moving to: %c\n", dest_cell->type); /* why the hell is this throwin' up wolfs?! */
+			}
 			if(cell->type == SQUIRREL_IN_TREE){
 				/* Squirrel leaving tree */
 				dest_cell->type = SQUIRREL;
@@ -293,11 +307,20 @@ void print_grid(world_cell ** world){
 
 void copy_world(void){
 	register int i;
-	#pragma omp parallel for 
+	#pragma omp parallel for
 	for(i = 0; i < grid_size; ++i)
 		memcpy(world_previous[i], world[i], grid_size*sizeof(world_cell));
 }
 
+void print_world(){
+	int i = 0, j;
+	for(; i < grid_size; ++i){
+		for (j = 0; j < grid_size; ++j){
+			if(world[i][j].type != EMPTY)
+				printf("%d %d %c\n", i, j, world[i][j].type);
+		}
+	}
+}
 void start_world_simulation(void){
 	register int i, j;
 	for(; number_of_generations > 0; --number_of_generations){
@@ -317,7 +340,11 @@ void start_world_simulation(void){
 			for (j = !(i & 1); j < grid_size; j += 2)
 				update_world_cell(i, j);
 
-		#pragma omp parallel for private(j) 
+		if(number_of_generations == 1){
+			print_world();
+		}
+
+		#pragma omp parallel for private(j)
 		for(i = 0; i < grid_size; ++i){
 			for (j = 0; j < grid_size; ++j){
 				if (world[i][j].moved){
@@ -339,15 +366,6 @@ void start_world_simulation(void){
 	
 }
 
-void print_world(){
-	int i = 0, j;
-	for(; i < grid_size; ++i){
-		for (j = 0; j < grid_size; ++j){
-			if(world[i][j].type != EMPTY)
-				printf("%d %d %c\n", i, j, world[i][j].type);
-		}
-	}
-}
 
 void freemem(void){
 	register unsigned short i = 0;
@@ -377,7 +395,7 @@ int main(int argc, char **argv){
 	
 	start_world_simulation();
 
-	print_world();
+	//print_world();
 
 	#ifdef GETTIME
     printf("OpenMP time: %fs\n", omp_get_wtime() - start);
