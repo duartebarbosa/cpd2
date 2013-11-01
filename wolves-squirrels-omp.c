@@ -11,6 +11,8 @@
 #define EMPTY ' '
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
+#define GET_X(number) number/grid_size
+#define GET_Y(number) number%grid_size
 
 typedef struct {
 	char type; /* Wolf, squirrel, squirrel in tree, tree, ice, empty */
@@ -28,14 +30,6 @@ unsigned short squirrel_breeding_period;
 unsigned short wolf_starvation_period;
 unsigned short number_of_generations;
 unsigned short grid_size;
-
-inline unsigned short get_x(unsigned short number){
-	return number/grid_size;
-}
-
-inline unsigned short get_y(unsigned short number){
-	return number%grid_size;
-}
 
 void initialize_world_array(){
 	register unsigned short i = 0;
@@ -204,7 +198,7 @@ unsigned short choose_cell(unsigned short number, unsigned short p){
 
 char add_cell(world_cell* aux_cell, world_cell** possible_cells, char bad_type, char bad_type2){
 	if(aux_cell->type != bad_type && aux_cell->type != bad_type2 && aux_cell->type != ICE){
-		*possible_cells = &world[get_x(aux_cell->number)][get_y(aux_cell->number)];
+		*possible_cells = &world[GET_X(aux_cell->number)][GET_Y(aux_cell->number)];
 		return 1;
 	}
 	return 0;
@@ -215,7 +209,7 @@ world_cell** retrieve_possible_cells(world_cell* cell){
 	world_cell** possible_cells = calloc(4, sizeof(world_cell*)); /* 4: max possible positions */
 	world_cell** tmp_cell = possible_cells;
 	char bad_type = 0, bad_type2 = 0;
-	unsigned short x = get_x(cell->number), y = get_y(cell->number);
+	unsigned short x = GET_X(cell->number), y = GET_Y(cell->number);
 
 	if(cell->type == WOLF){
 		bad_type = TREE;
