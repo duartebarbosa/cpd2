@@ -215,6 +215,7 @@ world_cell** retrieve_possible_cells(world_cell* cell){
 	world_cell** possible_cells = calloc(4, sizeof(world_cell*)); /* 4: max possible positions */
 	world_cell** tmp_cell = possible_cells;
 	char bad_type = 0, bad_type2 = 0;
+	unsigned short x = get_x(cell->number), y = get_y(cell->number);
 
 	if(cell->type == WOLF){
 		bad_type = TREE;
@@ -224,19 +225,19 @@ world_cell** retrieve_possible_cells(world_cell* cell){
 		bad_type = WOLF;
 
 	/*check top cell*/
-	if(get_x(cell->number) && add_cell(&world_previous[get_x(cell->number)-1][get_y(cell->number)], tmp_cell, bad_type, bad_type2))
+	if(x && add_cell(&world_previous[x-1][y], tmp_cell, bad_type, bad_type2))
 		++tmp_cell;
 	
 	/*check right cell*/
-	if(get_y(cell->number) != grid_size-1 && add_cell(&world_previous[get_x(cell->number)][get_y(cell->number)+1], tmp_cell, bad_type, bad_type2))
+	if(y != grid_size-1 && add_cell(&world_previous[x][y+1], tmp_cell, bad_type, bad_type2))
 		++tmp_cell;
 	
 	/*check bottom cell*/
-	if(get_x(cell->number) != grid_size-1 && add_cell(&world_previous[get_x(cell->number)+1][get_y(cell->number)], tmp_cell, bad_type, bad_type2))
+	if(x != grid_size-1 && add_cell(&world_previous[x+1][y], tmp_cell, bad_type, bad_type2))
 		++tmp_cell;
 	
 	/*check left cell */
-	if(get_y(cell->number) && add_cell(&world_previous[get_x(cell->number)][get_y(cell->number)-1], tmp_cell, bad_type, bad_type2))
+	if(y && add_cell(&world_previous[x][y-1], tmp_cell, bad_type, bad_type2))
 		++tmp_cell;
 	
 	return possible_cells;
