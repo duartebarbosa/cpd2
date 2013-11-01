@@ -29,7 +29,7 @@ world_cell **world_previous;
 unsigned short wolf_breeding_period;
 unsigned short squirrel_breeding_period;
 unsigned short wolf_starvation_period;
-unsigned short number_of_generations;
+unsigned int number_of_generations;
 unsigned short grid_size;
 
 void initialize_world_array(){
@@ -118,7 +118,7 @@ void move_wolf(world_cell* cell, world_cell* dest_cell) {
 			dest_cell->starvation_period = cell->starvation_period;
 			
 			/* clean cell or reproduce*/
-			if(dest_cell->breeding_period >= wolf_breeding_period){
+			if(dest_cell->breeding_period >= wolf_breeding_period && dest_cell->starvation_period > 1){
 				cell->type = WOLF;
 				cell->breeding_period = dest_cell->breeding_period = 0;
 				cell->starvation_period = wolf_starvation_period;
@@ -365,6 +365,7 @@ void start_world_simulation(void){
 						world[i][j].breeding_period++;
 						/* wolf dies of starvation */
 						if(world[i][j].starvation_period <= 0){
+							printf("Wolf dying in cell %d %d on GEN %d\n", i, j, number_of_generations);
 							cleanup_cell(&world[i][j]);
 						}
 					}
