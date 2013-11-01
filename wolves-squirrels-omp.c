@@ -82,6 +82,7 @@ void cleanup_cell(world_cell* cell){
 }
 
 void move_wolf(world_cell* cell, world_cell* dest_cell) {
+
 	dest_cell->moved = 1;
 	switch(dest_cell->type){
 		case SQUIRREL:
@@ -126,10 +127,6 @@ void move_wolf(world_cell* cell, world_cell* dest_cell) {
 	}
 }
 
-/* FIX:
-	1) os esquilos estão a tentar comer os lobos
-	2) não se está a prever o caso do esquilo vir de uma árvore para qualquer outro sitio que nao empty
-*/
 void move_squirrel(world_cell* cell, world_cell* dest_cell) {
 	dest_cell->moved = 1;
 	switch(dest_cell->type){
@@ -169,9 +166,21 @@ void move_squirrel(world_cell* cell, world_cell* dest_cell) {
 			}
 
 			break;
+		case WOLF:
+			/* Wolf eating squirrel */
+			dest_cell->starvation_period = wolf_starvation_period; 
+			
+			if(cell->type == SQUIRREL_IN_TREE){
+				cell->type = TREE;		
+			} else {
+				cleanup_cell(cell);
+			}
+			
+			break;
+		break;
 		default:
 			if(dest_cell-> type != EMPTY){
-				printf("Shouldn't happen, squirrel moving to: %c\n", dest_cell->type); /* why the hell is this throwin' up wolfs?! */
+				printf("Shouldn't happen, squirrel moving to: %c\n", dest_cell->type);
 			}
 			if(cell->type == SQUIRREL_IN_TREE){
 				/* Squirrel leaving tree */
@@ -203,7 +212,7 @@ void move_squirrel(world_cell* cell, world_cell* dest_cell) {
 
 char add_cell(world_cell* aux_cell, world_cell** possible_cells, char bad_type){
 	if(aux_cell->type != bad_type && aux_cell->type != ICE && aux_cell->type != SQUIRREL_IN_TREE && aux_cell->type != WOLF){
-		*possible_cells = &world[GET_X(aux_cell->number)][GET_Y(aux_cell->number)];
+		*possible_cells = &world_previous[GET_X(aux_cell->number)][GET_Y(aux_cell->number)];
 		return 1;
 	}
 	return 0;
@@ -254,17 +263,21 @@ void update_world_cell(unsigned short x, unsigned short y){
 				int squirrels_found = 0;
 				world_cell** squirrel_cells = malloc(4 * sizeof(world_cell*));
 
+	
 				possible_cells = retrieve_possible_cells(cell);
 				for(; count < 4 && possible_cells[count] != NULL; ++count){
 					if(possible_cells[count]->type == SQUIRREL)
 						squirrel_cells[squirrels_found++] = possible_cells[count];
 				}
 				
-				if(squirrels_found)
-					move_wolf(cell, squirrel_cells[CHOOSE_CELL(cell->number, squirrels_found)]);
-				else if (count)
-					move_wolf(cell, possible_cells[CHOOSE_CELL(cell->number, count--)]);
-
+				if(squirrels_found){
+					world_cell* prev_gen_dest_cell = squirrel_cells[CHOOSE_CELL(cell->number, squirrels_found)];
+					move_wolf(cell, &world[GET_X(prev_gen_dest_cell->number)][GET_Y(prev_gen_dest_cell->number)]);
+				} else if (count) {
+					world_cell* prev_gen_dest_cell = possible_cells[CHOOSE_CELL(cell->number, count--)];
+					move_wolf(cell, &world[GET_X(prev_gen_dest_cell->number)][GET_Y(prev_gen_dest_cell->number)]);
+				}
+				
 				free(squirrel_cells);
 				free(possible_cells);
 				break;
@@ -274,8 +287,10 @@ void update_world_cell(unsigned short x, unsigned short y){
 			possible_cells = retrieve_possible_cells(cell);
 			for(; count < 4 && possible_cells[count] != NULL; ++count);
 
-			if(count)
-				move_squirrel(cell, possible_cells[CHOOSE_CELL(cell->number, count--)]);
+			if (count) {
+				world_cell* prev_gen_dest_cell = possible_cells[CHOOSE_CELL(cell->number, count--)];
+				move_squirrel(cell, &world[GET_X(prev_gen_dest_cell->number)][GET_Y(prev_gen_dest_cell->number)]);
+			}
 	
 			free(possible_cells);
 			break;
@@ -307,6 +322,7 @@ void print_grid(world_cell ** world){
 
 void copy_world(void){
 	register int i;
+			
 	#pragma omp parallel for
 	for(i = 0; i < grid_size; ++i)
 		memcpy(world_previous[i], world[i], grid_size*sizeof(world_cell));
@@ -327,7 +343,7 @@ void start_world_simulation(void){
 		copy_world();
 
 		/* update 'red' cells, think chessboard */
-		#pragma omp parallel for private(j) 
+		#pragma omp parallel for private(j) schedule(dynamic)
 		for(i = 0; i < grid_size; ++i)
 			for (j = i & 1; j < grid_size; j += 2)
 				update_world_cell(i, j);
@@ -335,16 +351,16 @@ void start_world_simulation(void){
 		copy_world();
 
 		/* update 'black' cells, think chessboard */
-		#pragma omp parallel for private(j) 
+		#pragma omp parallel for private(j) schedule(dynamic)
 		for(i = 0; i < grid_size; ++i)
 			for (j = !(i & 1); j < grid_size; j += 2)
 				update_world_cell(i, j);
 
 		if(number_of_generations == 1){
-			print_world();
+			print_grid(world);
 		}
 
-		#pragma omp parallel for private(j)
+		#pragma omp parallel for private(j) schedule(dynamic)
 		for(i = 0; i < grid_size; ++i){
 			for (j = 0; j < grid_size; ++j){
 				if (world[i][j].moved){
@@ -392,7 +408,7 @@ int main(int argc, char **argv){
 	number_of_generations = atoi(argv[5]);
 		
 	parse_input(argv[1]); /* Filename */
-	
+
 	start_world_simulation();
 
 	//print_world();
