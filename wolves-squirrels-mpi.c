@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <omp.h>
+#include <mpi.h>
 
 #define WOLF 'w'
 #define SQUIRREL 's'
@@ -12,6 +12,7 @@
 
 #define MASTER 0
 #define INIT_TAG 1
+#define FILL_TAG 50
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define GET_X(number) number/grid_size
@@ -28,10 +29,10 @@
 
 typedef struct {
 	char type; /* Wolf, squirrel, squirrel in tree, tree, ice, empty */
+	char moved;
 	unsigned short breeding_period;
 	unsigned short starvation_period;
 	unsigned int number;
-	char moved;
 } world_cell;
 
 /* Global Variables */
@@ -403,20 +404,39 @@ void freemem(void){
 }
 
 int main(int argc, char **argv){
-int task;
+  
+	int task, chunk_size, len;
         MPI_Status status;
+	int chunks = CHUNK(grid_size);
         MPI_Request reqs[chunks];
+	char hostname[MPI_MAX_PROCESSOR_NAME];
 
 	#ifdef GETTIME
 	double start = MPI_Wtime();
 	#endif
         
+	const int nitems=3;
+	int          blocklengths[3] = {2,2,1};
+	MPI_Datatype types[3] = {MPI_CHAR, MPI_UNSIGNED_SHORT, MPI_UNSIGNED};
+	MPI_Datatype mpi_world_cell_type;
+	MPI_Aint     offsets[3];
+
+	offsets[0] = offsetof(world_cell, type);
+	offsets[1] = offsetof(world_cell, breeding_period);
+	offsets[2] = offsetof(world_cell, number);
+	
+
 	/* MPI Initialization */
         if (MPI_Init(&argc, &argv) != MPI_SUCCESS) {
                 printf ("Error starting MPI program. Terminating.\n");
                 /*MPI_Abort(MPI_COMM_WORLD, ret);*/
                 return -1;
         }
+        
+        MPI_Get_processor_name(hostname, &len);
+        
+	MPI_Type_create_struct(nitems, blocklengths, offsets, types, &mpi_world_cell_type);
+	MPI_Type_commit(&mpi_world_cell_type);
         
         MPI_Comm_size(MPI_COMM_WORLD, &numtasks);
         MPI_Comm_rank(MPI_COMM_WORLD, &taskid);
@@ -432,34 +452,47 @@ int task;
 		  
 	  parse_input(argv[1]); /* Filename */
 	  
-	   for(task = 1; task < numtasks; task++)
-                        MPI_Isend(chunk_size, 1, MPI_INT, task, INIT_TAG, MPI_COMM_WORLD, &size_reqs[task-1]);
-
-           MPI_Wait1all(numtasks - 1, size_reqs, MPI_STATUS_IGNORE);
-	   
 	   for(task = 1; task < numtasks; task++){
-		int chunk_size = FLIMIT_SUP_CHUNK(, task) - FLIMIT_INF_CHUNK(, task);
-                  MPI_Send(chunk_ptr, chunk_size * grid_size, MPI_WORLD_STRUCT, task, FILL_TAG, MPI_COMM_WORLD);
+	        int chunk_size = FLIMIT_SUP_CHUNK(grid_size, task) - FLIMIT_INF_CHUNK(grid_size, task);
+		printf("[%s] Will send %d chunk_size to %d\n", hostname, chunk_size, task);
+		MPI_Isend(&chunk_size, 1, MPI_INT, task, INIT_TAG, MPI_COMM_WORLD, &size_reqs[task-1]);
+	   }
+
+           MPI_Waitall(numtasks - 1, size_reqs, MPI_STATUS_IGNORE);
+	    
+	   for(task = 1; task < numtasks; task++){
+		int chunk_size = FLIMIT_SUP_CHUNK(grid_size, task) - FLIMIT_INF_CHUNK(grid_size, task);
+		printf("[%s] Sending %d cells to %d\n", hostname, chunk_size * grid_size, task);
+                MPI_Send(world[0], grid_size, mpi_world_cell_type, task, FILL_TAG, MPI_COMM_WORLD);
 	   }
 	}
 	else{
-	       MPI_Recv(chunk_size, 1, MPI_INT, MASTER, INIT_TAG, MPI_COMM_WORLD, &status);
-		for(doc = 0; doc < DOCUMENTS; doc++)
-                        MPI_Recv(info.docScore[doc], SUBJECTS, MPI_DOUBLE, MASTER, FILL_TAG, MPI_COMM_WORLD, &status);
-	
-		setup taskid
-	  
+		MPI_Recv(&chunk_size, 1, MPI_INT, MASTER, INIT_TAG, MPI_COMM_WORLD, &status);
+		printf("[%s] Task %d will receive chunk_size %d\n", hostname, taskid, chunk_size);
+		world_cell cworld[10];// = malloc(grid_size * sizeof(world_cell));
+                MPI_Recv(&cworld, 10, mpi_world_cell_type, MASTER, FILL_TAG, MPI_COMM_WORLD, &status);
+		
+		printf("[%s] Task %d received %d cells. Printing world:\n", hostname, taskid, chunk_size * 10);
+		
+		int i = 0;
+		for(; i < 10; i++){
+		  printf("TYPE: %c x:%d y:%d\n", cworld[i].type, 1, 1);
+		}
+		//print_world();
 	}
-	start_world_simulation();
+	
+	//start_world_simulation();
 
 	//print_world();
 
 	#ifdef GETTIME
-      printf("MPI time: %lf\n", MPI_Wtime() - start);
-    #endif
-    
-    freemem();
-     MPI_Finalize();
+	if(taskid == MASTER){
+	  printf("MPI time: %lf\n", MPI_Wtime() - start);
+	}
+    	#endif
+
+	freemem();
+	MPI_Finalize();
 
 	return 0;
 }

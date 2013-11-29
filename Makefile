@@ -23,7 +23,7 @@ omp: wolves-squirrels-omp.c
 	$(CC) $(GOODFLAGS) $(TIMER) -fopenmp wolves-squirrels-omp.c -o wolves-squirrels-omp
 
 mpi: wolves-squirrels-mpi.c
-	/usr/lib64/openmpi/bin/mpicc $(GOODFLAGS) $(TIMER) -g wolves-squirrels-mpi.c -o wolves-squirrels-mpi
+	mpicc $(GOODFLAGS) $(TIMER) -g wolves-squirrels-mpi.c -o wolves-squirrels-mpi
 
 mpi_omp: wolves-squirrels-mpi-omp.c
 	/usr/lib64/openmpi/bin/mpicc $(GOODFLAGS) $(TIMER) -fopenmp -g wolves-squirrels-mpi-omp.c -o wolves-squirrels-mpi-omp
