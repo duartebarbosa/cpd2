@@ -312,7 +312,7 @@ void update_world_cell(unsigned short x, unsigned short y){
 	}
 }
 
-void print_grid(world_cell ** world){
+void print_grid(world_cell ** world, int max){
 	register int i = 0;
 	
 	/*print header*/
@@ -323,9 +323,9 @@ void print_grid(world_cell ** world){
 	printf("\n");
 	
 	/*print world*/
-	for(i = 0; i < grid_size; ++i){
+	for(i = 0; i < max; ++i){
 		int j = 0;
-		printf("%d|", i);
+		printf("[Task: %d] %d|",taskid,  i);
 		for(; j < grid_size; ++j)
 			printf("%c|", world[i][j].type);
 
@@ -339,9 +339,9 @@ void copy_world(void){
 		memcpy(world_previous[i], world[i], grid_size*sizeof(world_cell));
 }
 
-void print_world(){
+void print_world(int max){
 	int i = 0, j;
-	for(; i < grid_size; ++i){
+	for(; i < max; ++i){
 		for (j = 0; j < grid_size; ++j){
 			if(world[i][j].type != EMPTY)
 				printf("%d %d %c\n", i, j, world[i][j].type);
@@ -365,9 +365,9 @@ void start_world_simulation(void){
 			for (j = !(i & 1); j < grid_size; j += 2)
 				update_world_cell(i, j);
 
-		if(number_of_generations == 1 && taskid == MASTER){
-			print_world();
-		}
+		/*if(number_of_generations == 1 && taskid == MASTER){
+			print_world(chunk_size);
+		}*/
 
 		for(i = 0; i < grid_size; ++i){
 			for (j = 0; j < grid_size; ++j){
@@ -454,6 +454,10 @@ int main(int argc, char **argv){
 		  
 	  parse_input(argv[1]); /* Filename */
 	  
+	  	if(taskid == MASTER){
+		print_grid(world, grid_size);
+	}
+	  
 	  info[1]=grid_size;
 	  
 	   for(task = 1; task < numtasks; task++){
@@ -474,7 +478,7 @@ int main(int argc, char **argv){
 				printf("[%s] Sending line %d to %d\n", hostname, c, task);
                 MPI_Send(world[c], grid_size, mpi_world_cell_type, task, FILL_TAG, MPI_COMM_WORLD);
 			}
-	   }
+	   }		
 	}
 	else{
 		 int c ,lim, j = 0;
@@ -494,19 +498,20 @@ int main(int argc, char **argv){
 		    printf("[%s-%d] Receiving line %d from %d\n", hostname, taskid, j, MASTER);
             MPI_Recv(world[j], grid_size, mpi_world_cell_type, MASTER, FILL_TAG, MPI_COMM_WORLD, &status);
             int i = 0;
-			for(; i < grid_size; i++){
+			/*for(; i < grid_size; i++){
 			  printf("[%s-%d] TYPE: %c - MOVED: %d - BP: %d - SP: %d - NUMBER: %d\n", hostname, taskid, world[j][i].type, world[j][i].moved,world[j][i].breeding_period,world[j][i].starvation_period,world[j][i].number);
-			}
+			}*/
 		}
 		
-		printf("[%s-%d] Task %d received %d cells. Printing world:\n", hostname, taskid, chunk_size * grid_size);
+		printf("[%s-%d] Received %d cells. Printing world:\n", hostname, taskid, chunk_size * grid_size);
 		
-		//print_world();
 	}
 	
 	//start_world_simulation();
 
-	//print_world();
+
+
+	print_grid(world, FLIMIT_SUP_CHUNK(grid_size, taskid) - FLIMIT_INF_CHUNK(grid_size, taskid));
 
 	#ifdef GETTIME
 	if(taskid == MASTER){
