@@ -46,12 +46,12 @@ unsigned short grid_size;
   
 	int numtasks, taskid;
 
-void initialize_world_array(){
+void initialize_world_array(int max){
 	register unsigned short i = 0;
 	world = malloc(grid_size * sizeof(world_cell*));
 	world_previous = malloc(grid_size * sizeof(world_cell*));
 
-	for(; i < grid_size; ++i){
+	for(; i < max; ++i){
 		unsigned short j = 0, partial_number = i * grid_size;
 		world[i] = calloc(grid_size, sizeof(world_cell));
 		world_previous[i] = calloc(grid_size, sizeof(world_cell));
@@ -78,7 +78,7 @@ void parse_input(char* filename){
 		exit(2);
 	}
 
-	initialize_world_array();
+	initialize_world_array(grid_size);
 
 	while(fscanf(input,"%hu %hu %c\n",&i, &j, &type) == 3){ /*All arguments read succesfully*/
 		world[i][j].type = type;
@@ -403,6 +403,8 @@ void freemem(void){
 	free(world_previous);
 }
 
+int info[2];
+
 int main(int argc, char **argv){
   
 	int task, chunk_size, len;
@@ -452,32 +454,53 @@ int main(int argc, char **argv){
 		  
 	  parse_input(argv[1]); /* Filename */
 	  
+	  info[1]=grid_size;
+	  
 	   for(task = 1; task < numtasks; task++){
 	        int chunk_size = FLIMIT_SUP_CHUNK(grid_size, task) - FLIMIT_INF_CHUNK(grid_size, task);
+			info[0]=chunk_size;
 		printf("[%s] Will send %d chunk_size to %d\n", hostname, chunk_size, task);
-		MPI_Isend(&chunk_size, 1, MPI_INT, task, INIT_TAG, MPI_COMM_WORLD, &size_reqs[task-1]);
+		MPI_Isend(info, 2, MPI_INT, task, INIT_TAG, MPI_COMM_WORLD, &size_reqs[task-1]);
 	   }
 
            MPI_Waitall(numtasks - 1, size_reqs, MPI_STATUS_IGNORE);
 	    
 	   for(task = 1; task < numtasks; task++){
-		int chunk_size = FLIMIT_SUP_CHUNK(grid_size, task) - FLIMIT_INF_CHUNK(grid_size, task);
-		printf("[%s] Sending %d cells to %d\n", hostname, chunk_size * grid_size, task);
-                MPI_Send(world[0], grid_size, mpi_world_cell_type, task, FILL_TAG, MPI_COMM_WORLD);
+		   int c = FLIMIT_INF_CHUNK(grid_size, task);
+		   int lim = FLIMIT_SUP_CHUNK(grid_size, task);
+			int chunk_size = FLIMIT_SUP_CHUNK(grid_size, task) - FLIMIT_INF_CHUNK(grid_size, task);
+			printf("[%s] Sending cells to %d\n", hostname, task);
+			for( ; c < lim; c++){
+				printf("[%s] Sending line %d to %d\n", hostname, c, task);
+                MPI_Send(world[c], grid_size, mpi_world_cell_type, task, FILL_TAG, MPI_COMM_WORLD);
+			}
 	   }
 	}
 	else{
-		MPI_Recv(&chunk_size, 1, MPI_INT, MASTER, INIT_TAG, MPI_COMM_WORLD, &status);
-		printf("[%s] Task %d will receive chunk_size %d\n", hostname, taskid, chunk_size);
-		world_cell cworld[10];// = malloc(grid_size * sizeof(world_cell));
-                MPI_Recv(&cworld, 10, mpi_world_cell_type, MASTER, FILL_TAG, MPI_COMM_WORLD, &status);
+		 int c ,lim, j = 0;
+		   
+		MPI_Recv(info, 2, MPI_INT, MASTER, INIT_TAG, MPI_COMM_WORLD, &status);
+		chunk_size=info[0];
+		grid_size=info[1];
 		
-		printf("[%s] Task %d received %d cells. Printing world:\n", hostname, taskid, chunk_size * 10);
+		c = FLIMIT_INF_CHUNK(grid_size, taskid);
+		lim = FLIMIT_SUP_CHUNK(grid_size, taskid);
+		 
+		printf("[%s-%d] Will receive chunk_size %d\n", hostname, taskid, chunk_size);
 		
-		int i = 0;
-		for(; i < 10; i++){
-		  printf("TYPE: %c x:%d y:%d\n", cworld[i].type, 1, 1);
+		initialize_world_array(chunk_size);
+		
+		for( ; j < chunk_size; j++){
+		    printf("[%s-%d] Receiving line %d from %d\n", hostname, taskid, j, MASTER);
+            MPI_Recv(world[j], grid_size, mpi_world_cell_type, MASTER, FILL_TAG, MPI_COMM_WORLD, &status);
+            int i = 0;
+			for(; i < grid_size; i++){
+			  printf("[%s-%d] TYPE: %c - MOVED: %d - BP: %d - SP: %d - NUMBER: %d\n", hostname, taskid, world[j][i].type, world[j][i].moved,world[j][i].breeding_period,world[j][i].starvation_period,world[j][i].number);
+			}
 		}
+		
+		printf("[%s-%d] Task %d received %d cells. Printing world:\n", hostname, taskid, chunk_size * grid_size);
+		
 		//print_world();
 	}
 	
@@ -491,7 +514,7 @@ int main(int argc, char **argv){
 	}
     	#endif
 
-	freemem();
+	//freemem();
 	MPI_Finalize();
 
 	return 0;
