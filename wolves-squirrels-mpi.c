@@ -43,7 +43,10 @@ unsigned short squirrel_breeding_period;
 unsigned short wolf_starvation_period;
 unsigned int number_of_generations;
 unsigned short grid_size;
-  
+unsigned short chunk_size;
+
+
+int info[6];  
 	int numtasks, taskid;
 
 void initialize_world_array(int max){
@@ -333,9 +336,9 @@ void print_grid(world_cell ** world, int max){
 	}
 }
 
-void copy_world(void){
+void copy_world(){
 	register int i;
-	for(i = 0; i < grid_size; ++i)
+	for(i = 0; i < chunk_size; ++i)
 		memcpy(world_previous[i], world[i], grid_size*sizeof(world_cell));
 }
 
@@ -354,22 +357,22 @@ void start_world_simulation(void){
 		copy_world();
 
 		/* update 'red' cells, think chessboard */
-		for(i = 0; i < grid_size; ++i)
+		for(i = 0; i < chunk_size; ++i)
 			for (j = i & 1; j < grid_size; j += 2)
 				update_world_cell(i, j);
 
 		copy_world();
 
 		/* update 'black' cells, think chessboard */
-		for(i = 0; i < grid_size; ++i)
+		for(i = 0; i < chunk_size; ++i)
 			for (j = !(i & 1); j < grid_size; j += 2)
 				update_world_cell(i, j);
 
-		/*if(number_of_generations == 1 && taskid == MASTER){
-			print_world(chunk_size);
-		}*/
+		if(number_of_generations == 1 /*&& taskid == MASTER*/){
+			print_grid(world, chunk_size);
+		}
 
-		for(i = 0; i < grid_size; ++i){
+		for(i = 0; i < chunk_size; ++i){
 			for (j = 0; j < grid_size; ++j){
 				if (world[i][j].moved){
 					if (world[i][j].type == SQUIRREL){
@@ -403,11 +406,9 @@ void freemem(void){
 	free(world_previous);
 }
 
-int info[2];
-
 int main(int argc, char **argv){
   
-	int task, chunk_size, len;
+	int task, len;
         MPI_Status status;
 	int chunks = CHUNK(grid_size);
         MPI_Request reqs[chunks];
@@ -447,10 +448,10 @@ int main(int argc, char **argv){
 	  MPI_Request size_reqs[numtasks-1];
 
 	  /* Maybe check for invalid input? */
-	  wolf_breeding_period = atoi(argv[2]);
-	  squirrel_breeding_period = atoi(argv[3]);
-	  wolf_starvation_period = atoi(argv[4]);
-	  number_of_generations = atoi(argv[5]);
+	  info[2] = wolf_breeding_period = atoi(argv[2]);
+	  info[3] = squirrel_breeding_period = atoi(argv[3]);
+	  info[4] = wolf_starvation_period = atoi(argv[4]);
+	  info[5] = number_of_generations = atoi(argv[5]);
 		  
 	  parse_input(argv[1]); /* Filename */
 	  
@@ -464,11 +465,12 @@ int main(int argc, char **argv){
 	        int chunk_size = FLIMIT_SUP_CHUNK(grid_size, task) - FLIMIT_INF_CHUNK(grid_size, task);
 			info[0]=chunk_size;
 		printf("[%s] Will send %d chunk_size to %d\n", hostname, chunk_size, task);
-		MPI_Isend(info, 2, MPI_INT, task, INIT_TAG, MPI_COMM_WORLD, &size_reqs[task-1]);
+		MPI_Isend(info, 6, MPI_INT, task, INIT_TAG, MPI_COMM_WORLD, &size_reqs[task-1]);
 	   }
 
            MPI_Waitall(numtasks - 1, size_reqs, MPI_STATUS_IGNORE);
-	    
+	 	        chunk_size = FLIMIT_SUP_CHUNK(grid_size, task) - FLIMIT_INF_CHUNK(grid_size, task);
+			info[0]=chunk_size;   
 	   for(task = 1; task < numtasks; task++){
 		   int c = FLIMIT_INF_CHUNK(grid_size, task);
 		   int lim = FLIMIT_SUP_CHUNK(grid_size, task);
@@ -483,9 +485,13 @@ int main(int argc, char **argv){
 	else{
 		 int c ,lim, j = 0;
 		   
-		MPI_Recv(info, 2, MPI_INT, MASTER, INIT_TAG, MPI_COMM_WORLD, &status);
+		MPI_Recv(info, 6, MPI_INT, MASTER, INIT_TAG, MPI_COMM_WORLD, &status);
 		chunk_size=info[0];
 		grid_size=info[1];
+		wolf_breeding_period = info[2];
+	  squirrel_breeding_period = info[3];
+	  wolf_starvation_period = info[4];
+	  number_of_generations = info[5];
 		
 		c = FLIMIT_INF_CHUNK(grid_size, taskid);
 		lim = FLIMIT_SUP_CHUNK(grid_size, taskid);
@@ -507,15 +513,12 @@ int main(int argc, char **argv){
 		
 	}
 	
-	//start_world_simulation();
-
-
-
-	print_grid(world, FLIMIT_SUP_CHUNK(grid_size, taskid) - FLIMIT_INF_CHUNK(grid_size, taskid));
+	start_world_simulation();
 
 	#ifdef GETTIME
 	if(taskid == MASTER){
 	  printf("MPI time: %lf\n", MPI_Wtime() - start);
+	  	print_grid(world, chunk_size);
 	}
     	#endif
 
