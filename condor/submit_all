@@ -1,0 +1,7 @@
+#!/bin/bash
+condor_submit world_10
+condor_submit world_10_2
+condor_submit world_100
+condor_submit world_1000
+condor_submit world_10000
+condor_q
