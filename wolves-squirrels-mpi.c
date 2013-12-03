@@ -19,7 +19,8 @@
 #define GET_Y(number) number%grid_size
 #define CHOOSE_CELL(number, p) number%p
 
-#define CHUNK (grid_size-(numtasks-1)*2)/numtasks
+#define CHUNK ((grid_size-(numtasks-1)*2)/numtasks)
+#define CHUNK_REMAINDER ((grid_size-(numtasks-1)*2)%numtasks)
 
 #define FLIMIT_INF_CHUNK(x) x*(CHUNK+2)
 #define FLIMIT_SUP_CHUNK(x) FLIMIT_INF_CHUNK(x)+CHUNK
@@ -44,6 +45,7 @@ unsigned short wolf_starvation_period;
 unsigned int number_of_generations;
 unsigned short grid_size;
 unsigned short chunk_size;
+unsigned short payload;
 
 int bottom, top;
 
@@ -329,10 +331,17 @@ void print_grid(world_cell ** world, int max){
 	/*print world*/
 	for(i = 0; i < max; ++i){
 		int j = 0;
-		printf("[Task: %d] %d|",taskid,  i);
-		for(; j < grid_size; ++j)
-			printf("%c|", world[i][j].type);
-
+		if (i < bottom){
+			printf("[B Task: %d] %d|",taskid,  i);
+		} else if (i >=	top){
+			printf("[T Task: %d] %d|",taskid,  i);
+		} else {
+			printf("[- Task: %d] %d|",taskid,  i);
+		}
+		for(; j < grid_size; ++j){
+				printf("%c|", world[i][j].type);
+			
+		}
 		printf("\n");
 	}
 }
@@ -353,18 +362,7 @@ void print_world(int max){
 	}
 }
 void start_world_simulation(void){
-	register int i, j, bottom, top;
-
-	if(taskid == MASTER){
-		bottom = 0;
-		top = chunk_size-1;
-	} else if (taskid == numtasks-1){
-		bottom = 1;
-		top = chunk_size;
-	} else {
-		bottom = 1;
-		top = chunk_size-1;
-	}
+	register int i, j;
 	
 	printf("[Task: %d] bottom: %d top: %d\n", taskid, bottom, top);
 		
@@ -476,7 +474,10 @@ int main(int argc, char **argv){
 		}
 	  
 	  info[0]=grid_size;
-	  chunk_size = CHUNK;
+	  
+	  bottom = 0;
+	  top = chunk_size = CHUNK;
+	  payload = top+2;
 	  
 	   for(task = 1; task < numtasks; task++){
 			//printf("[%s] Will send %d chunk_size to %d\n", hostname, chunk_size, task);
@@ -492,6 +493,7 @@ int main(int argc, char **argv){
 			
 			if (task == numtasks-1){
 				bottom_task -= 2;
+				top_task += CHUNK_REMAINDER;
 			} else {
 				bottom_task  -= 2;
 				top_task += 2;
@@ -504,16 +506,18 @@ int main(int argc, char **argv){
 			}
 	   }
 	   
-	   //MASTER		
 	}
 	else{
-		int j = 0, lim;
+		int j = 0;
 		   
 		MPI_Recv(info, 5, MPI_INT, MASTER, INIT_TAG, MPI_COMM_WORLD, &status);
 		
 		grid_size=info[0];
-		chunk_size=CHUNK;
-		
+		if(taskid == numtasks-1){
+			chunk_size = CHUNK + CHUNK_REMAINDER;
+		} else {
+			chunk_size = CHUNK;
+		}
 		wolf_breeding_period = info[1];
 		squirrel_breeding_period = info[2];
 		wolf_starvation_period = info[3];
@@ -528,13 +532,13 @@ int main(int argc, char **argv){
 		top = chunk_size+bottom;
 		
 		if (taskid == numtasks-1){
-			lim = top;
+			payload = top;
 		} else {
-			lim = top+2;
+			payload = top+2;
 		}
-				initialize_world_array(lim);
+				initialize_world_array(payload );
 			printf("[%d] - chunk: %d, top: %d, bottom: %d\n", taskid, chunk_size, top, bottom);
-		for( ; j < lim; j++){
+		for( ; j < payload; j++){
 		    //printf("[%s-%d] Receiving line %d from %d\n", hostname, taskid, j, MASTER);
             MPI_Recv(world[j], grid_size, mpi_world_cell_type, MASTER, FILL_TAG, MPI_COMM_WORLD, &status);
             /*int i = 0;
@@ -547,7 +551,11 @@ int main(int argc, char **argv){
 		
 	}
 	
-	start_world_simulation();
+	//start_world_simulation();
+
+		print_grid(world, payload);
+		
+
 
 	#ifdef GETTIME
 	if(taskid == MASTER){
