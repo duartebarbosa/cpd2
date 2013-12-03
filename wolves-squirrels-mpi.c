@@ -13,9 +13,10 @@
 #define MASTER 0
 #define INIT_TAG 1
 #define FILL_TAG 50
+#define RECV_TAG 150
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
-#define GET_X(number) number/grid_size
+#define GET_X(number) ((number)/grid_size)
 #define GET_Y(number) number%grid_size
 #define CHOOSE_CELL(number, p) number%p
 
@@ -242,8 +243,8 @@ world_cell** retrieve_possible_cells(world_cell* cell){
 	world_cell** possible_cells = calloc(4, sizeof(world_cell*)); /* 4: max possible positions */
 	world_cell** tmp_cell = possible_cells;
 	char bad_type = 0;
-	unsigned short x = GET_X(cell->number), y = GET_Y(cell->number);
-
+	unsigned short x = GET_X(cell->number - world[0][0].number), y = GET_Y(cell->number);
+	
 	if(cell->type == WOLF){
 		bad_type = TREE;
 	}
@@ -259,7 +260,7 @@ world_cell** retrieve_possible_cells(world_cell* cell){
 		++tmp_cell;
 	
 	/*check bottom cell*/
-	if(x != grid_size-1 && add_cell(&world_previous[x+1][y], tmp_cell, bad_type))
+	if(x != payload-1 && add_cell(&world_previous[x+1][y], tmp_cell, bad_type))
 		++tmp_cell;
 	
 	/*check left cell */
@@ -384,8 +385,8 @@ void start_world_simulation(void){
 
 		/* resolve conflicts */
 
-		if(number_of_generations == 1 && taskid == MASTER){
-			print_grid(world, chunk_size);
+		if(number_of_generations == 1){
+			return;
 		}
 
 		for(i = bottom; i < top; ++i){
@@ -551,18 +552,33 @@ int main(int argc, char **argv){
 		
 	}
 	
-	//start_world_simulation();
+	start_world_simulation();
 
-		print_grid(world, payload);
+	//Sync to master
+	if(taskid == MASTER){
+		int i = top+2;
+				
+		for(; i < grid_size; i++){
+			printf("Waiting for line %d\n", i);
+			MPI_Recv(world[i], grid_size, mpi_world_cell_type, MPI_ANY_SOURCE, RECV_TAG+i, MPI_COMM_WORLD, &status);
+		}
 		
 
-
+		print_grid(world, grid_size);
+	} else {
+		int i = bottom;
+		for( ; i < payload; i++){
+			printf("Sending line %d from task %d\n", GET_X(world[i][0].number), taskid);
+			MPI_Send(world[i], grid_size, mpi_world_cell_type, MASTER, RECV_TAG+GET_X(world[i][0].number), MPI_COMM_WORLD);
+		}
+	}
+	
+	
 	#ifdef GETTIME
 	if(taskid == MASTER){
 	  printf("MPI time: %lf\n", MPI_Wtime() - start);
-	  	print_grid(world, chunk_size);
 	}
-    	#endif
+    #endif
 
 	//freemem();
 	MPI_Finalize();
