@@ -352,7 +352,7 @@ void start_world_simulation(void){
 				update_world_cell(i, j);
 
 		if(number_of_generations == 1){
-			print_world();
+			return;
 		}
 
 		for(i = 0; i < grid_size; ++i){
@@ -405,7 +405,7 @@ int main(int argc, char **argv){
 
 	start_world_simulation();
 
-	//print_world();
+	print_world();
 
 	#ifdef GETTIME
     printf("OpenMP time: %fs\n", omp_get_wtime() - start);
