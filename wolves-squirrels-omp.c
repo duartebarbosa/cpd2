@@ -11,6 +11,9 @@
 #define EMPTY ' '
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
+#define MAX_BREED(a, b) MAX(a->breeding_period, b->breeding_period)
+#define MAX_STARV(a, b) MAX(a->starvation_period, b->starvation_period)
+
 #define GET_X(cell) cell->number/grid_size
 #define GET_Y(cell) cell->number%grid_size
 #define CHOOSE_CELL(cell, p) cell->number%p
@@ -101,10 +104,10 @@ void move_wolf(world_cell* cell, world_cell* dest_cell) {
 			dest_cell->type = cell->type;
 			/* same starvation */			
 			if(cell->starvation_period == dest_cell->starvation_period){
-				dest_cell->breeding_period = MAX(cell->breeding_period, dest_cell->breeding_period);
+				dest_cell->breeding_period = MAX_BREED(cell, dest_cell);
 			} else {
 				dest_cell->breeding_period = (cell->starvation_period > dest_cell->starvation_period ? cell->breeding_period : dest_cell->breeding_period);
-				dest_cell->starvation_period = MAX(cell->starvation_period, dest_cell->starvation_period);
+				dest_cell->starvation_period = MAX_STARV(cell, dest_cell);
 			}
 			
 			/* clean cell */
@@ -148,7 +151,7 @@ void move_squirrel(world_cell* cell, world_cell* dest_cell) {
 		case SQUIRREL:
 			/* Squirrel moving to squirrel*/
 			
-			dest_cell->breeding_period = MAX(cell->breeding_period, dest_cell->breeding_period);
+			dest_cell->breeding_period = MAX_BREED(cell, dest_cell);
 
 			if(cell->type == SQUIRREL_IN_TREE){
 				dest_cell->type = SQUIRREL;
@@ -161,7 +164,7 @@ void move_squirrel(world_cell* cell, world_cell* dest_cell) {
 			break;
 		case SQUIRREL_IN_TREE:
 			dest_cell->type = SQUIRREL_IN_TREE;
-			dest_cell->breeding_period = MAX(cell->breeding_period, dest_cell->breeding_period);
+			dest_cell->breeding_period = MAX_BREED(cell, dest_cell);
 
 			moving_squirrel_in_tree(cell);
 			break;
