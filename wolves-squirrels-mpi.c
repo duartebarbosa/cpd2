@@ -21,7 +21,7 @@
 #define GET_REAL_X(cell) ((cell->number-world[0][0].number)/grid_size)
 #define GET_X(number) ((number)/grid_size)
 #define GET_Y(cell) cell->number%grid_size
-#define CHOOSE_CELL(number, p) number%p
+#define CHOOSE_CELL(cell, p) cell->number%p
 
 #define CHUNK ((grid_size-(numtasks-1)*2)/numtasks)
 #define CHUNK_REMAINDER ((grid_size-(numtasks-1)*2)%numtasks)
@@ -293,7 +293,7 @@ void update_world_cell(unsigned short x, unsigned short y, char force_inbound){
 				}
 				
 				if(squirrels_found){
-					world_cell* prev_gen_dest_cell = squirrel_cells[CHOOSE_CELL(cell->number, squirrels_found)];
+					world_cell* prev_gen_dest_cell = squirrel_cells[CHOOSE_CELL(cell, squirrels_found)];
 					if((force_inbound && ((GET_REAL_X(prev_gen_dest_cell) < bottom) || (GET_REAL_X(prev_gen_dest_cell) > top)))){
 						printf("Ignoring inbound move to line %d (bottom: %d, top: %d)\n", GET_REAL_X(prev_gen_dest_cell), bottom, top);
 					} else {
@@ -301,7 +301,7 @@ void update_world_cell(unsigned short x, unsigned short y, char force_inbound){
 					}
 					
 				} else if (count) {
-					world_cell* prev_gen_dest_cell = possible_cells[CHOOSE_CELL(cell->number, count--)];
+					world_cell* prev_gen_dest_cell = possible_cells[CHOOSE_CELL(cell, count--)];
 					if((force_inbound && ((GET_REAL_X(prev_gen_dest_cell) < bottom) || (GET_REAL_X(prev_gen_dest_cell) > top)))){
 						printf("Ignoring inbound move to line %d (bottom: %d, top: %d)\n", GET_REAL_X(prev_gen_dest_cell), bottom, top);
 					} else {
@@ -319,7 +319,7 @@ void update_world_cell(unsigned short x, unsigned short y, char force_inbound){
 			for(; count < 4 && possible_cells[count] != NULL; ++count);
 
 			if (count) {
-				world_cell* prev_gen_dest_cell = possible_cells[CHOOSE_CELL(cell->number, count--)];
+				world_cell* prev_gen_dest_cell = possible_cells[CHOOSE_CELL(cell, count--)];
 				
 				if((force_inbound && ((GET_REAL_X(prev_gen_dest_cell) < bottom) || (GET_REAL_X(prev_gen_dest_cell) > top)))){
 					printf("Ignoring inbound move to line %d (bottom: %d, top: %d)\n", GET_REAL_X(prev_gen_dest_cell), bottom, top);
