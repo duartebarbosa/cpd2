@@ -17,8 +17,10 @@
 #define CONF_TAG 150
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
+
+#define GET_REAL_X(cell) ((cell->number-world[0][0].number)/grid_size)
 #define GET_X(number) ((number)/grid_size)
-#define GET_Y(number) number%grid_size
+#define GET_Y(cell) cell->number%grid_size
 #define CHOOSE_CELL(number, p) number%p
 
 #define CHUNK ((grid_size-(numtasks-1)*2)/numtasks)
@@ -232,7 +234,7 @@ void move_squirrel(world_cell* cell, world_cell* dest_cell) {
 
 char add_cell(world_cell* aux_cell, world_cell** possible_cells, char bad_type){
 	if(aux_cell->type != bad_type && aux_cell->type != ICE && aux_cell->type != SQUIRREL_IN_TREE && aux_cell->type != WOLF){
-		*possible_cells = &world_previous[GET_X(aux_cell->number - world[0][0].number)][GET_Y(aux_cell->number)];
+		*possible_cells = &world_previous[GET_REAL_X(aux_cell)][GET_Y(aux_cell)];
 		return 1;
 	}
 	return 0;
@@ -243,7 +245,7 @@ world_cell** retrieve_possible_cells(world_cell* cell){
 	world_cell** possible_cells = calloc(4, sizeof(world_cell*)); /* 4: max possible positions */
 	world_cell** tmp_cell = possible_cells;
 	char bad_type = 0;
-	unsigned short x = GET_X(cell->number - world[0][0].number), y = GET_Y(cell->number);
+	unsigned short x = GET_REAL_X(cell), y = GET_Y(cell);
 	
 	if(cell->type == WOLF){
 		bad_type = TREE;
@@ -292,18 +294,18 @@ void update_world_cell(unsigned short x, unsigned short y, char force_inbound){
 				
 				if(squirrels_found){
 					world_cell* prev_gen_dest_cell = squirrel_cells[CHOOSE_CELL(cell->number, squirrels_found)];
-					if((force_inbound && ((GET_X(prev_gen_dest_cell->number - world[0][0].number) < bottom) || (GET_X(prev_gen_dest_cell->number - world[0][0].number) > top)))){
-						printf("Ignoring inbound move to line %d (bottom: %d, top: %d)\n", GET_X(prev_gen_dest_cell->number - world[0][0].number), bottom, top);
+					if((force_inbound && ((GET_REAL_X(prev_gen_dest_cell) < bottom) || (GET_REAL_X(prev_gen_dest_cell) > top)))){
+						printf("Ignoring inbound move to line %d (bottom: %d, top: %d)\n", GET_REAL_X(prev_gen_dest_cell), bottom, top);
 					} else {
-						move_wolf(cell, &world[GET_X(prev_gen_dest_cell->number - world[0][0].number)][GET_Y(prev_gen_dest_cell->number)]);
+						move_wolf(cell, &world[GET_REAL_X(prev_gen_dest_cell)][GET_Y(prev_gen_dest_cell)]);
 					}
 					
 				} else if (count) {
 					world_cell* prev_gen_dest_cell = possible_cells[CHOOSE_CELL(cell->number, count--)];
-					if((force_inbound && ((GET_X(prev_gen_dest_cell->number - world[0][0].number) < bottom) || (GET_X(prev_gen_dest_cell->number - world[0][0].number) > top)))){
-						printf("Ignoring inbound move to line %d (bottom: %d, top: %d)\n", GET_X(prev_gen_dest_cell->number - world[0][0].number), bottom, top);
+					if((force_inbound && ((GET_REAL_X(prev_gen_dest_cell) < bottom) || (GET_REAL_X(prev_gen_dest_cell) > top)))){
+						printf("Ignoring inbound move to line %d (bottom: %d, top: %d)\n", GET_REAL_X(prev_gen_dest_cell), bottom, top);
 					} else {
-						move_wolf(cell, &world[GET_X(prev_gen_dest_cell->number - world[0][0].number)][GET_Y(prev_gen_dest_cell->number)]);
+						move_wolf(cell, &world[GET_REAL_X(prev_gen_dest_cell)][GET_Y(prev_gen_dest_cell)]);
 					}
 				}
 				
@@ -319,10 +321,10 @@ void update_world_cell(unsigned short x, unsigned short y, char force_inbound){
 			if (count) {
 				world_cell* prev_gen_dest_cell = possible_cells[CHOOSE_CELL(cell->number, count--)];
 				
-				if((force_inbound && ((GET_X(prev_gen_dest_cell->number - world[0][0].number) < bottom) || (GET_X(prev_gen_dest_cell->number - world[0][0].number) > top)))){
-					printf("Ignoring inbound move to line %d (bottom: %d, top: %d)\n", GET_X(prev_gen_dest_cell->number - world[0][0].number), bottom, top);
+				if((force_inbound && ((GET_REAL_X(prev_gen_dest_cell) < bottom) || (GET_REAL_X(prev_gen_dest_cell) > top)))){
+					printf("Ignoring inbound move to line %d (bottom: %d, top: %d)\n", GET_REAL_X(prev_gen_dest_cell), bottom, top);
 				} else {
-					move_squirrel(cell, &world[GET_X(prev_gen_dest_cell->number - world[0][0].number)][GET_Y(prev_gen_dest_cell->number)]);
+					move_squirrel(cell, &world[GET_REAL_X(prev_gen_dest_cell)][GET_Y(prev_gen_dest_cell)]);
 				}
 		
 			}
@@ -398,6 +400,7 @@ void resolve_conflicts(){
 	}
 		
 	//resolve conflicts on n+1 n+2
+	// TODO
 	
 	//send to taskid+1
 	if(taskid != numtasks-1){
@@ -457,9 +460,8 @@ void start_world_simulation(void){
 		/* resolve conflicts */
 		resolve_conflicts();
 		
-		if(number_of_generations == 1){
+		if(number_of_generations == 1)
 			return;
-		}
 
 		for(i = bottom; i < top; ++i){
 			for (j = 0; j < grid_size; ++j){
