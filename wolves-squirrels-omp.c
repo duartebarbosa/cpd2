@@ -326,7 +326,7 @@ void start_world_simulation(void){
 				update_world_cell(i, j);
 
 		if(number_of_generations == 1)
-			print_world();
+			return;
 
 		#pragma omp parallel for private(j) 
 		for(i = 0; i < grid_size; ++i){
@@ -377,6 +377,8 @@ int main(int argc, char **argv){
 	parse_input(argv[1]); /* Filename */
 
 	start_world_simulation();
+
+	print_world();
 
 	#ifdef GETTIME
     printf("OpenMP time: %fs\n", omp_get_wtime() - start);
