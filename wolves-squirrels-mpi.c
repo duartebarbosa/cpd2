@@ -17,9 +17,13 @@
 #define CONF_TAG 150
 
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
+#define MAX_BREED(a, b) MAX(a->breeding_period, b->breeding_period)
+#define MAX_STARV(a, b) MAX(a->starvation_period, b->starvation_period)
+
+#define GET_REAL_X(cell) ((cell->number-world[0][0].number)/grid_size)
 #define GET_X(number) ((number)/grid_size)
-#define GET_Y(number) number%grid_size
-#define CHOOSE_CELL(number, p) number%p
+#define GET_Y(cell) cell->number%grid_size
+#define CHOOSE_CELL(cell, p) cell->number%p
 
 #define CHUNK ((grid_size-(numtasks-1)*2)/numtasks)
 #define CHUNK_REMAINDER ((grid_size-(numtasks-1)*2)%numtasks)
@@ -51,10 +55,7 @@ unsigned short payload;
 
 MPI_Datatype mpi_world_cell_type;
 
-int bottom, top;
-
-int info[5];
-int numtasks, taskid;
+int bottom, top, info[5], numtasks, taskid;
 
 void initialize_world_array(int max){
 	register unsigned short i = 0;
@@ -123,10 +124,10 @@ void move_wolf(world_cell* cell, world_cell* dest_cell) {
 			dest_cell->type = cell->type;
 			/* same starvation */			
 			if(cell->starvation_period == dest_cell->starvation_period){
-				dest_cell->breeding_period = MAX(cell->breeding_period, dest_cell->breeding_period);
+				dest_cell->breeding_period = MAX_BREED(cell, dest_cell);
 			} else {
 				dest_cell->breeding_period = (cell->starvation_period > dest_cell->starvation_period ? cell->breeding_period : dest_cell->breeding_period);
-				dest_cell->starvation_period = MAX(cell->starvation_period, dest_cell->starvation_period);
+				dest_cell->starvation_period = MAX_STARV(cell, dest_cell);
 			}
 			
 			/* clean cell */
@@ -168,7 +169,7 @@ void move_squirrel(world_cell* cell, world_cell* dest_cell) {
 		case SQUIRREL:
 			/* Squirrel moving to squirrel*/
 			
-			dest_cell->breeding_period = MAX(cell->breeding_period, dest_cell->breeding_period);
+			dest_cell->breeding_period = MAX_BREED(cell, dest_cell);
 
 			if(cell->type == SQUIRREL_IN_TREE){
 				dest_cell->type = SQUIRREL;
@@ -181,7 +182,7 @@ void move_squirrel(world_cell* cell, world_cell* dest_cell) {
 			break;
 		case SQUIRREL_IN_TREE:
 			dest_cell->type = SQUIRREL_IN_TREE;
-			dest_cell->breeding_period = MAX(cell->breeding_period, dest_cell->breeding_period);
+			dest_cell->breeding_period = MAX_BREED(cell, dest_cell);
 
 			if(cell->type == SQUIRREL_IN_TREE){
 				cell->type = TREE;		
@@ -235,7 +236,7 @@ void move_squirrel(world_cell* cell, world_cell* dest_cell) {
 
 char add_cell(world_cell* aux_cell, world_cell** possible_cells, char bad_type){
 	if(aux_cell->type != bad_type && aux_cell->type != ICE && aux_cell->type != SQUIRREL_IN_TREE && aux_cell->type != WOLF){
-		*possible_cells = &world_previous[GET_X(aux_cell->number - world[0][0].number)][GET_Y(aux_cell->number)];
+		*possible_cells = &world_previous[GET_REAL_X(aux_cell)][GET_Y(aux_cell)];
 		return 1;
 	}
 	return 0;
@@ -246,7 +247,7 @@ world_cell** retrieve_possible_cells(world_cell* cell){
 	world_cell** possible_cells = calloc(4, sizeof(world_cell*)); /* 4: max possible positions */
 	world_cell** tmp_cell = possible_cells;
 	char bad_type = 0;
-	unsigned short x = GET_X(cell->number - world[0][0].number), y = GET_Y(cell->number);
+	unsigned short x = GET_REAL_X(cell), y = GET_Y(cell);
 	
 	if(cell->type == WOLF){
 		bad_type = TREE;
@@ -294,19 +295,19 @@ void update_world_cell(unsigned short x, unsigned short y, char force_inbound){
 				}
 				
 				if(squirrels_found){
-					world_cell* prev_gen_dest_cell = squirrel_cells[CHOOSE_CELL(cell->number, squirrels_found)];
-					if((force_inbound && ((GET_X(prev_gen_dest_cell->number - world[0][0].number) < bottom) || (GET_X(prev_gen_dest_cell->number - world[0][0].number) > top)))){
-						printf("Ignoring inbound move to line %d (bottom: %d, top: %d)\n", GET_X(prev_gen_dest_cell->number - world[0][0].number), bottom, top);
+					world_cell* prev_gen_dest_cell = squirrel_cells[CHOOSE_CELL(cell, squirrels_found)];
+					if((force_inbound && ((GET_REAL_X(prev_gen_dest_cell) < bottom) || (GET_REAL_X(prev_gen_dest_cell) > top)))){
+						printf("Ignoring inbound move to line %d (bottom: %d, top: %d)\n", GET_REAL_X(prev_gen_dest_cell), bottom, top);
 					} else {
-						move_wolf(cell, &world[GET_X(prev_gen_dest_cell->number - world[0][0].number)][GET_Y(prev_gen_dest_cell->number)]);
+						move_wolf(cell, &world[GET_REAL_X(prev_gen_dest_cell)][GET_Y(prev_gen_dest_cell)]);
 					}
 					
 				} else if (count) {
-					world_cell* prev_gen_dest_cell = possible_cells[CHOOSE_CELL(cell->number, count--)];
-					if((force_inbound && ((GET_X(prev_gen_dest_cell->number - world[0][0].number) < bottom) || (GET_X(prev_gen_dest_cell->number - world[0][0].number) > top)))){
-						printf("Ignoring inbound move to line %d (bottom: %d, top: %d)\n", GET_X(prev_gen_dest_cell->number - world[0][0].number), bottom, top);
+					world_cell* prev_gen_dest_cell = possible_cells[CHOOSE_CELL(cell, count--)];
+					if((force_inbound && ((GET_REAL_X(prev_gen_dest_cell) < bottom) || (GET_REAL_X(prev_gen_dest_cell) > top)))){
+						printf("Ignoring inbound move to line %d (bottom: %d, top: %d)\n", GET_REAL_X(prev_gen_dest_cell), bottom, top);
 					} else {
-						move_wolf(cell, &world[GET_X(prev_gen_dest_cell->number - world[0][0].number)][GET_Y(prev_gen_dest_cell->number)]);
+						move_wolf(cell, &world[GET_REAL_X(prev_gen_dest_cell)][GET_Y(prev_gen_dest_cell)]);
 					}
 				}
 				
@@ -320,12 +321,12 @@ void update_world_cell(unsigned short x, unsigned short y, char force_inbound){
 			for(; count < 4 && possible_cells[count] != NULL; ++count);
 
 			if (count) {
-				world_cell* prev_gen_dest_cell = possible_cells[CHOOSE_CELL(cell->number, count--)];
+				world_cell* prev_gen_dest_cell = possible_cells[CHOOSE_CELL(cell, count--)];
 				
-				if((force_inbound && ((GET_X(prev_gen_dest_cell->number - world[0][0].number) < bottom) || (GET_X(prev_gen_dest_cell->number - world[0][0].number) > top)))){
-					printf("Ignoring inbound move to line %d (bottom: %d, top: %d)\n", GET_X(prev_gen_dest_cell->number - world[0][0].number), bottom, top);
+				if((force_inbound && ((GET_REAL_X(prev_gen_dest_cell) < bottom) || (GET_REAL_X(prev_gen_dest_cell) > top)))){
+					printf("Ignoring inbound move to line %d (bottom: %d, top: %d)\n", GET_REAL_X(prev_gen_dest_cell), bottom, top);
 				} else {
-					move_squirrel(cell, &world[GET_X(prev_gen_dest_cell->number - world[0][0].number)][GET_Y(prev_gen_dest_cell->number)]);
+					move_squirrel(cell, &world[GET_REAL_X(prev_gen_dest_cell)][GET_Y(prev_gen_dest_cell)]);
 				}
 		
 			}
@@ -401,6 +402,7 @@ void resolve_conflicts(){
 	}
 		
 	//resolve conflicts on n+1 n+2
+	// TODO
 	
 	//send to taskid+1
 	if(taskid != numtasks-1){
@@ -460,9 +462,8 @@ void start_world_simulation(void){
 		/* resolve conflicts */
 		resolve_conflicts();
 		
-		if(number_of_generations == 1){
+		if(number_of_generations == 1)
 			return;
-		}
 
 		for(i = bottom; i < top; ++i){
 			for (j = 0; j < grid_size; ++j){
@@ -499,15 +500,15 @@ void freemem(void){
 }
 
 int main(int argc, char **argv){
-  
+
 	int task, len, chunks = CHUNK;
-    MPI_Status status;
+	MPI_Status status;
 	char hostname[MPI_MAX_PROCESSOR_NAME];
 
 	#ifdef GETTIME
 	double start = MPI_Wtime();
 	#endif
-        
+
 	const int nitems=3;
 	int          blocklengths[3] = {2,2,1};
 	MPI_Datatype types[3] = {MPI_CHAR, MPI_UNSIGNED_SHORT, MPI_UNSIGNED};
@@ -519,68 +520,63 @@ int main(int argc, char **argv){
 	
 
 	/* MPI Initialization */
-    if (MPI_Init(&argc, &argv) != MPI_SUCCESS) {
-        printf ("Error starting MPI program. Terminating.\n");
-        /*MPI_Abort(MPI_COMM_WORLD, ret);*/
+	if (MPI_Init(&argc, &argv) != MPI_SUCCESS) {
+	printf ("Error starting MPI program. Terminating.\n");
+		/*MPI_Abort(MPI_COMM_WORLD, ret);*/
 		return -1;
-    }
-        
-    MPI_Get_processor_name(hostname, &len);
-        
+	}
+
+	MPI_Get_processor_name(hostname, &len);
+
 	MPI_Type_create_struct(nitems, blocklengths, offsets, types, &mpi_world_cell_type);
 	MPI_Type_commit(&mpi_world_cell_type);
         
     MPI_Comm_size(MPI_COMM_WORLD, &numtasks);
     MPI_Comm_rank(MPI_COMM_WORLD, &taskid);
-	
-	if(taskid == MASTER){
-	  MPI_Request size_reqs[numtasks-1];
-  
-	  parse_input(argv[1]); /* Filename */
-	  
-	  if(taskid == MASTER){
-		print_grid(world, grid_size);
-	  }
-	  
-	  info[0] = grid_size;
-	  info[1] = wolf_breeding_period = atoi(argv[2]);
-	  info[2] = squirrel_breeding_period = atoi(argv[3]);
-	  info[3] = wolf_starvation_period = atoi(argv[4]);
-	  info[4] = number_of_generations = atoi(argv[5]);
-	  
-	  bottom = 0;
-	  top = chunk_size = CHUNK;
-	  payload = top+2;
-	  
-	   for(task = 1; task < numtasks; task++){
-			MPI_Isend(info, 5, MPI_INT, task, INIT_TAG, MPI_COMM_WORLD, &size_reqs[task-1]);
-	   }
 
-       MPI_Waitall(numtasks - 1, size_reqs, MPI_STATUS_IGNORE);
-	   
-	   for(task = 1; task < numtasks; task++){
-			int bottom_task = FLIMIT_INF_CHUNK(task);
-			int top_task = FLIMIT_SUP_CHUNK(task);
-			int chunk_size = top_task-bottom_task;
+	if(taskid == MASTER){
+		MPI_Request size_reqs[numtasks-1];
+
+		parse_input(argv[1]); /* Filename */
+
+		print_grid(world, grid_size);
+
+		info[0] = grid_size;
+		info[1] = wolf_breeding_period = atoi(argv[2]);
+		info[2] = squirrel_breeding_period = atoi(argv[3]);
+		info[3] = wolf_starvation_period = atoi(argv[4]);
+		info[4] = number_of_generations = atoi(argv[5]);
+
+		bottom = 0;
+		top = chunk_size = CHUNK;
+		payload = top + 2;
+
+		for(task = 1; task < numtasks; task++)
+			MPI_Isend(info, 5, MPI_INT, task, INIT_TAG, MPI_COMM_WORLD, &size_reqs[task-1]);
+
+		MPI_Waitall(numtasks - 1, size_reqs, MPI_STATUS_IGNORE);
+
+		for(task = 1; task < numtasks; task++){
+			int bottom_task = FLIMIT_INF_CHUNK(task),
+				top_task = FLIMIT_SUP_CHUNK(task),
+				chunk_size = top_task-bottom_task;
 			
-			if (task == numtasks-1){
-				bottom_task -= 2;
+			bottom_task -= 2;
+
+			if (task == numtasks-1)
 				top_task += CHUNK_REMAINDER;
-			} else {
-				bottom_task  -= 2;
+			else
 				top_task += 2;
-			}
 
 			for( ; bottom_task < top_task; bottom_task++){
 				/*printf("[%s] Sending line %d to %d\n", hostname, bottom_task, task);*/
-                MPI_Send(world[bottom_task], grid_size, mpi_world_cell_type, task, FILL_TAG, MPI_COMM_WORLD);
+				MPI_Send(world[bottom_task], grid_size, mpi_world_cell_type, task, FILL_TAG, MPI_COMM_WORLD);
 			}
-	   }
-	   
-	}
-	else{
+		}
+
+	} else {
 		int j = 0;
-		   
+
 		MPI_Recv(info, 5, MPI_INT, MASTER, INIT_TAG, MPI_COMM_WORLD, &status);
 		
 		grid_size = info[0];
@@ -589,27 +585,22 @@ int main(int argc, char **argv){
 		wolf_starvation_period = info[3];
 		number_of_generations = info[4];
 		
+		bottom = 2;
 		if(taskid == numtasks-1){
 			chunk_size = CHUNK + CHUNK_REMAINDER;
+			payload = top = chunk_size+bottom;
 		} else {
 			chunk_size = CHUNK;
+			top = chunk_size+bottom;
+			payload = top + 2;
 		}
-		
-		bottom  = 2;
-		top = chunk_size+bottom;
-		
-		if (taskid == numtasks-1){
-			payload = top;
-		} else {
-			payload = top+2;
-		}
-		
+
 		initialize_world_array(payload );
 		printf("[%d] - chunk: %d, top: %d, bottom: %d\n", taskid, chunk_size, top, bottom);
 		
 		for( ; j < payload; j++){
-            MPI_Recv(world[j], grid_size, mpi_world_cell_type, MASTER, FILL_TAG, MPI_COMM_WORLD, &status);
-    	}
+			MPI_Recv(world[j], grid_size, mpi_world_cell_type, MASTER, FILL_TAG, MPI_COMM_WORLD, &status);
+		}
 		
 	}
 
@@ -617,28 +608,24 @@ int main(int argc, char **argv){
 
 	//Sync to master
 	if(taskid == MASTER){
-		int i = top+2;
+		int i = top + 2;
 				
-		for(; i < grid_size; i++){
-			/*printf("Waiting for line %d\n", i);*/
+		for(; i < grid_size; i++)
 			MPI_Recv(world[i], grid_size, mpi_world_cell_type, MPI_ANY_SOURCE, RECV_TAG+i, MPI_COMM_WORLD, &status);
-		}
 
 		print_grid(world, grid_size);
 	} else {
 		int i = bottom;
-		for( ; i < payload; i++){
-			/*printf("Sending line %d from task %d\n", GET_X(world[i][0].number), taskid);*/
+
+		for( ; i < payload; i++)
 			MPI_Send(world[i], grid_size, mpi_world_cell_type, MASTER, RECV_TAG+GET_X(world[i][0].number), MPI_COMM_WORLD);
-		}
 	}
 
 
 	#ifdef GETTIME
-	if(taskid == MASTER){
+	if(taskid == MASTER)
 	  printf("MPI time: %lf\n", MPI_Wtime() - start);
-	}
-    #endif
+	#endif
 
 	//freemem();
 	MPI_Finalize();
