@@ -51,10 +51,7 @@ unsigned short payload;
 
 MPI_Datatype mpi_world_cell_type;
 
-int bottom, top;
-
-int info[5];
-int numtasks, taskid;
+int bottom, top, info[5], numtasks, taskid;
 
 void initialize_world_array(int max){
 	register unsigned short i = 0;
@@ -499,15 +496,15 @@ void freemem(void){
 }
 
 int main(int argc, char **argv){
-  
+
 	int task, len, chunks = CHUNK;
-    MPI_Status status;
+	MPI_Status status;
 	char hostname[MPI_MAX_PROCESSOR_NAME];
 
 	#ifdef GETTIME
 	double start = MPI_Wtime();
 	#endif
-        
+
 	const int nitems=3;
 	int          blocklengths[3] = {2,2,1};
 	MPI_Datatype types[3] = {MPI_CHAR, MPI_UNSIGNED_SHORT, MPI_UNSIGNED};
@@ -519,68 +516,63 @@ int main(int argc, char **argv){
 	
 
 	/* MPI Initialization */
-    if (MPI_Init(&argc, &argv) != MPI_SUCCESS) {
-        printf ("Error starting MPI program. Terminating.\n");
-        /*MPI_Abort(MPI_COMM_WORLD, ret);*/
+	if (MPI_Init(&argc, &argv) != MPI_SUCCESS) {
+	printf ("Error starting MPI program. Terminating.\n");
+		/*MPI_Abort(MPI_COMM_WORLD, ret);*/
 		return -1;
-    }
-        
-    MPI_Get_processor_name(hostname, &len);
-        
+	}
+
+	MPI_Get_processor_name(hostname, &len);
+
 	MPI_Type_create_struct(nitems, blocklengths, offsets, types, &mpi_world_cell_type);
 	MPI_Type_commit(&mpi_world_cell_type);
         
     MPI_Comm_size(MPI_COMM_WORLD, &numtasks);
     MPI_Comm_rank(MPI_COMM_WORLD, &taskid);
-	
-	if(taskid == MASTER){
-	  MPI_Request size_reqs[numtasks-1];
-  
-	  parse_input(argv[1]); /* Filename */
-	  
-	  if(taskid == MASTER){
-		print_grid(world, grid_size);
-	  }
-	  
-	  info[0] = grid_size;
-	  info[1] = wolf_breeding_period = atoi(argv[2]);
-	  info[2] = squirrel_breeding_period = atoi(argv[3]);
-	  info[3] = wolf_starvation_period = atoi(argv[4]);
-	  info[4] = number_of_generations = atoi(argv[5]);
-	  
-	  bottom = 0;
-	  top = chunk_size = CHUNK;
-	  payload = top+2;
-	  
-	   for(task = 1; task < numtasks; task++){
-			MPI_Isend(info, 5, MPI_INT, task, INIT_TAG, MPI_COMM_WORLD, &size_reqs[task-1]);
-	   }
 
-       MPI_Waitall(numtasks - 1, size_reqs, MPI_STATUS_IGNORE);
-	   
-	   for(task = 1; task < numtasks; task++){
-			int bottom_task = FLIMIT_INF_CHUNK(task);
-			int top_task = FLIMIT_SUP_CHUNK(task);
-			int chunk_size = top_task-bottom_task;
+	if(taskid == MASTER){
+		MPI_Request size_reqs[numtasks-1];
+
+		parse_input(argv[1]); /* Filename */
+
+		print_grid(world, grid_size);
+
+		info[0] = grid_size;
+		info[1] = wolf_breeding_period = atoi(argv[2]);
+		info[2] = squirrel_breeding_period = atoi(argv[3]);
+		info[3] = wolf_starvation_period = atoi(argv[4]);
+		info[4] = number_of_generations = atoi(argv[5]);
+
+		bottom = 0;
+		top = chunk_size = CHUNK;
+		payload = top + 2;
+
+		for(task = 1; task < numtasks; task++)
+			MPI_Isend(info, 5, MPI_INT, task, INIT_TAG, MPI_COMM_WORLD, &size_reqs[task-1]);
+
+		MPI_Waitall(numtasks - 1, size_reqs, MPI_STATUS_IGNORE);
+
+		for(task = 1; task < numtasks; task++){
+			int bottom_task = FLIMIT_INF_CHUNK(task),
+				top_task = FLIMIT_SUP_CHUNK(task),
+				chunk_size = top_task-bottom_task;
 			
-			if (task == numtasks-1){
-				bottom_task -= 2;
+			bottom_task -= 2;
+
+			if (task == numtasks-1)
 				top_task += CHUNK_REMAINDER;
-			} else {
-				bottom_task  -= 2;
+			else
 				top_task += 2;
-			}
 
 			for( ; bottom_task < top_task; bottom_task++){
 				/*printf("[%s] Sending line %d to %d\n", hostname, bottom_task, task);*/
-                MPI_Send(world[bottom_task], grid_size, mpi_world_cell_type, task, FILL_TAG, MPI_COMM_WORLD);
+				MPI_Send(world[bottom_task], grid_size, mpi_world_cell_type, task, FILL_TAG, MPI_COMM_WORLD);
 			}
-	   }
-	   
-	}
-	else{
+		}
+
+	} else {
 		int j = 0;
-		   
+
 		MPI_Recv(info, 5, MPI_INT, MASTER, INIT_TAG, MPI_COMM_WORLD, &status);
 		
 		grid_size = info[0];
@@ -589,27 +581,22 @@ int main(int argc, char **argv){
 		wolf_starvation_period = info[3];
 		number_of_generations = info[4];
 		
+		bottom = 2;
 		if(taskid == numtasks-1){
 			chunk_size = CHUNK + CHUNK_REMAINDER;
+			payload = top = chunk_size+bottom;
 		} else {
 			chunk_size = CHUNK;
+			top = chunk_size+bottom;
+			payload = top + 2;
 		}
-		
-		bottom  = 2;
-		top = chunk_size+bottom;
-		
-		if (taskid == numtasks-1){
-			payload = top;
-		} else {
-			payload = top+2;
-		}
-		
+
 		initialize_world_array(payload );
 		printf("[%d] - chunk: %d, top: %d, bottom: %d\n", taskid, chunk_size, top, bottom);
 		
 		for( ; j < payload; j++){
-            MPI_Recv(world[j], grid_size, mpi_world_cell_type, MASTER, FILL_TAG, MPI_COMM_WORLD, &status);
-    	}
+			MPI_Recv(world[j], grid_size, mpi_world_cell_type, MASTER, FILL_TAG, MPI_COMM_WORLD, &status);
+		}
 		
 	}
 
@@ -617,28 +604,24 @@ int main(int argc, char **argv){
 
 	//Sync to master
 	if(taskid == MASTER){
-		int i = top+2;
+		int i = top + 2;
 				
-		for(; i < grid_size; i++){
-			/*printf("Waiting for line %d\n", i);*/
+		for(; i < grid_size; i++)
 			MPI_Recv(world[i], grid_size, mpi_world_cell_type, MPI_ANY_SOURCE, RECV_TAG+i, MPI_COMM_WORLD, &status);
-		}
 
 		print_grid(world, grid_size);
 	} else {
 		int i = bottom;
-		for( ; i < payload; i++){
-			/*printf("Sending line %d from task %d\n", GET_X(world[i][0].number), taskid);*/
+
+		for( ; i < payload; i++)
 			MPI_Send(world[i], grid_size, mpi_world_cell_type, MASTER, RECV_TAG+GET_X(world[i][0].number), MPI_COMM_WORLD);
-		}
 	}
 
 
 	#ifdef GETTIME
-	if(taskid == MASTER){
+	if(taskid == MASTER)
 	  printf("MPI time: %lf\n", MPI_Wtime() - start);
-	}
-    #endif
+	#endif
 
 	//freemem();
 	MPI_Finalize();
