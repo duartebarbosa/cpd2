@@ -584,7 +584,7 @@ void start_world_simulation(void){
 		resolve_conflicts(RED);
 		copy_world();
 
-		gather();
+		//gather();
 
 		/* update 'black' cells, think chessboard */
 		for(i = btm_lim; i < top_lim; ++i){

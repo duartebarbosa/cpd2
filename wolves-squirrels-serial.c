@@ -53,7 +53,7 @@ void initialize_world_array(){
 }
 
 void parse_input(char* filename){
-	unsigned short i, j;
+	int i, j;
 	char type;
 	FILE *input;
 
@@ -69,7 +69,7 @@ void parse_input(char* filename){
 
 	initialize_world_array();
 
-	while(fscanf(input,"%hu %hu %c\n",&i, &j, &type) == 3){ /*All arguments read succesfully*/
+	while(fscanf(input,"%d %d %c\n",&i, &j, &type) == 3){ /*All arguments read succesfully*/
 		world[i][j].type = type;
 		if(type == WOLF)
 			world[i][j].starvation_period = wolf_starvation_period;
