@@ -459,6 +459,20 @@ void start_world_simulation(void){
 			for (j = !(i & 1); j < grid_size; j += 2)
 				update_world_cell(i, j, 0);
 				
+		/* update 'n-1' */
+		if(taskid != MASTER){
+			printf("[Task: %d] Updating n-1 line %d (%d) PAYLOAD: %d\n", taskid, bottom-1, GET_X(world[bottom-1][0].number),payload);
+			for (j = !((bottom-1) & 1); j < grid_size; j += 2)
+				update_world_cell(bottom-1, j, 1);
+		}
+		
+		/* update 'n+1' */
+		if(taskid != numtasks-1){
+			printf("[Task: %d] Updating n+1 line %d (%d) PAYLOAD: %d\n", taskid, top, GET_X(world[top][0].number), payload);
+			for (j = !(top & 1); j < grid_size; j += 2)
+				update_world_cell(top, j, 1);
+		}
+
 		/* resolve conflicts */
 		resolve_conflicts();
 		
