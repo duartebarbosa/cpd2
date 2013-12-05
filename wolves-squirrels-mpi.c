@@ -10,6 +10,9 @@
 #define SQUIRREL_IN_TREE '$'
 #define EMPTY ' '
 
+#define UPDATED 2
+#define MOVED 1
+
 #define MASTER 0
 #define INIT_TAG 1
 #define FILL_TAG 50
@@ -113,7 +116,7 @@ void cleanup_cell(world_cell* cell){
 
 void move_wolf(world_cell* cell, world_cell* dest_cell) {
 
-	dest_cell->moved = 1;
+	dest_cell->moved = UPDATED;
 	switch(dest_cell->type){
 		case SQUIRREL:
 			/* Wolf eating squirrel */
@@ -158,7 +161,7 @@ void move_wolf(world_cell* cell, world_cell* dest_cell) {
 }
 
 void move_squirrel(world_cell* cell, world_cell* dest_cell) {
-	dest_cell->moved = 1;
+	dest_cell->moved = UPDATED;
 	switch(dest_cell->type){
 		case TREE:
 			dest_cell->breeding_period = cell->breeding_period;
@@ -323,7 +326,7 @@ void update_world_cell(unsigned short x, unsigned short y){
 						move_wolf(cell, &world[GET_REAL_X(prev_gen_dest_cell)][GET_Y(prev_gen_dest_cell)]);
 					//}
 				} else {
-					cell->moved = 1; //was updated anyways
+					cell->moved = UPDATED; //was updated anyways
 				}
 				
 				free(squirrel_cells);
@@ -346,7 +349,7 @@ void update_world_cell(unsigned short x, unsigned short y){
 				//}
 		
 			} else {
-				cell->moved = 1; //was updated anyways
+				cell->moved = UPDATED; //was updated anyways
 			}
 	
 			free(possible_cells);
@@ -484,36 +487,41 @@ void resolve_conflicts(int generation_color){
 	// Keep all moved cells from THIS generation (world), discard others
 	for(i=0; i < grid_size; i++){
 		//discard unmoved cells from my world with color 'generation_color'
-		if(world[payload-2][i].moved == 0 && get_cell_color(&world[payload-2][i]) == generation_color && world[payload-2][i].type != ICE && world[payload-2][i].type != TREE && world[payload-2][i].type != EMPTY){
+		if(world[payload-2][i].moved != UPDATED && get_cell_color(&world[payload-2][i]) == generation_color && world[payload-2][i].type != ICE && world[payload-2][i].type != TREE && world[payload-2][i].type != EMPTY){
 			
 			cleanup_cell(&world[payload-2][i]);
 			/*if(taskid==0)
 				printf("[Task: %d] Discarding unmoved cell on %d %d\n", taskid, payload-2, i);*/
+		} else if (world[payload-2][i].moved == UPDATED) {
+			world[payload-2][i].moved = MOVED;
 		}
-		if(world[payload-1][i].moved == 0 && get_cell_color(&world[payload-1][i]) == generation_color && world[payload-1][i].type != ICE && world[payload-1][i].type != TREE && world[payload-1][i].type != EMPTY){
+		if(world[payload-1][i].moved != UPDATED && get_cell_color(&world[payload-1][i]) == generation_color && world[payload-1][i].type != ICE && world[payload-1][i].type != TREE && world[payload-1][i].type != EMPTY){
 			cleanup_cell(&world[payload-1][i]);
 			/*if(taskid==0)
 				printf("[Task: %d] Discarding unmoved cell on %d %d\n", taskid, payload-1, i);*/
-		} else {
+		} else if (world[payload-1][i].moved == UPDATED){
+			world[payload-1][i].moved = MOVED;
 			//if(taskid==0)
 				//printf("[Task: %d] Processed cell %d %d (%c, %d) %d but did nothing\n", taskid, payload-1, i, world[payload-1][i].type, world[payload-1][i].moved, get_cell_color(&world[payload-1][i]));
 		}
-		if(conf1[i].moved){
+		if(conf1[i].moved == UPDATED){
 			//move to my world
 			if(conf1[i].type == WOLF){
 				move_wolf(&conf1[i], &world[payload-2][i]);
 			} else {
 				move_squirrel(&conf1[i], &world[payload-2][i]);
 			}
+			world[payload-2][i].moved = MOVED;
 			/*printf("[Task: %d] Keeping moved cell on %d %d\n", taskid, payload-2, i);*/
 		}
-		if(conf2[i].moved){
+		if(conf2[i].moved == UPDATED){
 			//move to my world
 			if(conf2[i].type == WOLF){
 				move_wolf(&conf2[i], &world[payload-1][i]);
 			} else {
 				move_squirrel(&conf2[i], &world[payload-1][i]);
 			}
+			world[payload-1][i].moved = MOVED;
 			/*printf("[Task: %d] Keeping moved cell on %d %d\n", taskid, payload-1, i);*/
 		}
 	}
