@@ -406,7 +406,7 @@ int main(int argc, char **argv){
 
 	start_world_simulation();
 
-	print_world();
+	print_grid(world);
 
 	#ifdef GETTIME
     printf("OpenMP time: %fs\n", omp_get_wtime() - start);

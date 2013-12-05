@@ -16,6 +16,9 @@
 #define RECV_TAG 500
 #define CONF_TAG 150
 
+#define RED 999
+#define BLACK 888
+
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MAX_BREED(a, b) MAX(a->breeding_period, b->breeding_period)
 #define MAX_STARV(a, b) MAX(a->starvation_period, b->starvation_period)
@@ -100,6 +103,8 @@ void parse_input(char* filename){
 	if(fclose(input) == EOF)
 		exit(3);
 }
+
+
 
 void cleanup_cell(world_cell* cell){
 	cell->type = EMPTY;
@@ -274,10 +279,16 @@ world_cell** retrieve_possible_cells(world_cell* cell){
 	return possible_cells;
 }
 
-void update_world_cell(unsigned short x, unsigned short y, char force_inbound){
+void update_world_cell(unsigned short x, unsigned short y){
 	world_cell *cell = &world[x][y];
 	world_cell** possible_cells;
 	int count = 0;
+
+	//printf("[Task %d] Updating cell %d %d\n", taskid, x, y);
+
+	/*if(x==8&&y==0&&taskid==3){
+		printf("[Task %d] POSSIBLE CELL FOR SQUIRREL\n", taskid);
+	}*/
 
 	/* perfom logic for each cell type */
 	switch(cell->type){
@@ -296,19 +307,23 @@ void update_world_cell(unsigned short x, unsigned short y, char force_inbound){
 				
 				if(squirrels_found){
 					world_cell* prev_gen_dest_cell = squirrel_cells[CHOOSE_CELL(cell, squirrels_found)];
-					if((force_inbound && ((GET_REAL_X(prev_gen_dest_cell) < bottom) || (GET_REAL_X(prev_gen_dest_cell) > top)))){
-						printf("Ignoring inbound move to line %d (bottom: %d, top: %d)\n", GET_REAL_X(prev_gen_dest_cell), bottom, top);
-					} else {
+					/*if((force_inbound && ((GET_REAL_X(prev_gen_dest_cell) < bottom) || (GET_REAL_X(prev_gen_dest_cell) > top)))){
+						printf("Ignoring not inbound move. Remaining at %d %d but wants to move to %d %d\n", GET_X(cell->number), GET_Y(cell), GET_X(prev_gen_dest_cell), GET_Y(prev_gen_dest_cell));
+						cell->future_number = prev_gen_dest_cell->number;
+					} else {*/
 						move_wolf(cell, &world[GET_REAL_X(prev_gen_dest_cell)][GET_Y(prev_gen_dest_cell)]);
-					}
+					//}
 					
 				} else if (count) {
 					world_cell* prev_gen_dest_cell = possible_cells[CHOOSE_CELL(cell, count--)];
-					if((force_inbound && ((GET_REAL_X(prev_gen_dest_cell) < bottom) || (GET_REAL_X(prev_gen_dest_cell) > top)))){
-						printf("Ignoring inbound move to line %d (bottom: %d, top: %d)\n", GET_REAL_X(prev_gen_dest_cell), bottom, top);
-					} else {
+					/*if((force_inbound && ((GET_REAL_X(prev_gen_dest_cell) < bottom) || (GET_REAL_X(prev_gen_dest_cell) > top)))){
+						printf("Ignoring not inbound move. Remaining at %d %d but wants to move to %d %d\n", GET_X(cell->number), GET_Y(cell), GET_X(prev_gen_dest_cell->number), GET_Y(prev_gen_dest_cell->number));
+						cell->future_number = prev_gen_dest_cell->number;
+					} else {*/
 						move_wolf(cell, &world[GET_REAL_X(prev_gen_dest_cell)][GET_Y(prev_gen_dest_cell)]);
-					}
+					//}
+				} else {
+					cell->moved = 1; //was updated anyways
 				}
 				
 				free(squirrel_cells);
@@ -323,12 +338,15 @@ void update_world_cell(unsigned short x, unsigned short y, char force_inbound){
 			if (count) {
 				world_cell* prev_gen_dest_cell = possible_cells[CHOOSE_CELL(cell, count--)];
 				
-				if((force_inbound && ((GET_REAL_X(prev_gen_dest_cell) < bottom) || (GET_REAL_X(prev_gen_dest_cell) > top)))){
-					printf("Ignoring inbound move to line %d (bottom: %d, top: %d)\n", GET_REAL_X(prev_gen_dest_cell), bottom, top);
-				} else {
+				/*if((force_inbound && ((GET_REAL_X(prev_gen_dest_cell) < bottom) || (GET_REAL_X(prev_gen_dest_cell) > top)))){
+					printf("Ignoring not inbound move. Remaining at %d %d but wants to move to %d %d\n", GET_X(cell->number), GET_Y(cell), GET_X(prev_gen_dest_cell->number), GET_Y(prev_gen_dest_cell->number));
+					cell->future_number = prev_gen_dest_cell->number;
+				} else {*/
 					move_squirrel(cell, &world[GET_REAL_X(prev_gen_dest_cell)][GET_Y(prev_gen_dest_cell)]);
-				}
+				//}
 		
+			} else {
+				cell->moved = 1; //was updated anyways
 			}
 	
 			free(possible_cells);
@@ -338,11 +356,14 @@ void update_world_cell(unsigned short x, unsigned short y, char force_inbound){
 	}
 }
 
+
+
+
 void print_grid(world_cell ** world, int max){
 	register int i = 0;
 	
 	/*print header*/
-	printf("  ");
+	printf("              ");
 	for(; i < grid_size; ++i)
 		printf("%d ", i);
 
@@ -366,6 +387,26 @@ void print_grid(world_cell ** world, int max){
 	}
 }
 
+void gather(){
+	MPI_Status status;
+
+	//Sync to master
+	if(taskid == MASTER){
+		int i = top + 2;
+				
+		for(; i < grid_size; i++)
+			MPI_Recv(world[i], grid_size, mpi_world_cell_type, MPI_ANY_SOURCE, RECV_TAG+i, MPI_COMM_WORLD, &status);
+
+		print_grid(world, grid_size);
+	} else {
+		int i = bottom;
+
+		for( ; i < payload; i++)
+			MPI_Send(world[i], grid_size, mpi_world_cell_type, MASTER, RECV_TAG+GET_X(world[i][0].number), MPI_COMM_WORLD);
+	}
+
+}
+
 void copy_world(){
 	register int i;
 	for(i = 0; i < payload; ++i)
@@ -382,9 +423,28 @@ void print_world(int max){
 	}
 }
 
-void resolve_conflicts(){
+int get_cell_color(world_cell* cell){
+	int x = GET_X(cell->number);
+	int y = GET_Y(cell);
+
+	if((x%2 == 0 && y%2 == 0) || (x%2 != 0 && y%2 != 0)){
+		return RED;
+	} else {
+		return BLACK;
+	}
+}
+
+void resolve_conflicts(int generation_color){
+	int i;
 	world_cell* conf1 = malloc(grid_size*sizeof(world_cell));
 	world_cell* conf2 = malloc(grid_size*sizeof(world_cell));
+
+	if(generation_color == RED){
+		printf("[Task: %d] *** RED CONFLICTS ***\n", taskid);
+	} else {
+		printf("[Task: %d] *** BLACK CONFLICTS %d ***\n", taskid, generation_color);
+	}
+
 	//send to taskid-1
 	if(taskid != MASTER){
 		MPI_Request size_reqs[2];
@@ -400,9 +460,63 @@ void resolve_conflicts(){
 		MPI_Recv(conf2, grid_size, mpi_world_cell_type, taskid+1, CONF_TAG+1, MPI_COMM_WORLD, &status);
 		/*printf("Task %d receiving last lines from task %d\n", taskid, taskid+1);*/
 	}
-		
+
+	if(taskid==0){
+		printf("a\n");
+		for(i=0; i < grid_size; i++){
+			printf("%c(%d),", world[payload-2][i].type, world[payload-2][i].moved);
+		}
+		printf("\nb\n");
+		for(i=0; i < grid_size; i++){
+			printf("%c(%d),", world[payload-1][i].type, world[payload-1][i].moved);
+		}
+		printf("\na\n");
+		for(i=0; i < grid_size; i++){
+			printf("%c(%d),", conf1[i].type, conf1[i].moved);
+		}
+		printf("\nb\n");
+		for(i=0; i < grid_size; i++){
+			printf("%c(%d),", conf2[i].type, conf2[i].moved);
+		}
+		printf("\n");
+	}
 	//resolve conflicts on n+1 n+2
-	// TODO
+	// Keep all moved cells from THIS generation (world), discard others
+	for(i=0; i < grid_size; i++){
+		//discard unmoved cells from my world with color 'generation_color'
+		if(world[payload-2][i].moved == 0 && get_cell_color(&world[payload-2][i]) == generation_color && world[payload-2][i].type != ICE && world[payload-2][i].type != TREE && world[payload-2][i].type != EMPTY){
+			
+			cleanup_cell(&world[payload-2][i]);
+			/*if(taskid==0)
+				printf("[Task: %d] Discarding unmoved cell on %d %d\n", taskid, payload-2, i);*/
+		}
+		if(world[payload-1][i].moved == 0 && get_cell_color(&world[payload-1][i]) == generation_color && world[payload-1][i].type != ICE && world[payload-1][i].type != TREE && world[payload-1][i].type != EMPTY){
+			cleanup_cell(&world[payload-1][i]);
+			/*if(taskid==0)
+				printf("[Task: %d] Discarding unmoved cell on %d %d\n", taskid, payload-1, i);*/
+		} else {
+			//if(taskid==0)
+				//printf("[Task: %d] Processed cell %d %d (%c, %d) %d but did nothing\n", taskid, payload-1, i, world[payload-1][i].type, world[payload-1][i].moved, get_cell_color(&world[payload-1][i]));
+		}
+		if(conf1[i].moved){
+			//move to my world
+			if(conf1[i].type == WOLF){
+				move_wolf(&conf1[i], &world[payload-2][i]);
+			} else {
+				move_squirrel(&conf1[i], &world[payload-2][i]);
+			}
+			/*printf("[Task: %d] Keeping moved cell on %d %d\n", taskid, payload-2, i);*/
+		}
+		if(conf2[i].moved){
+			//move to my world
+			if(conf2[i].type == WOLF){
+				move_wolf(&conf2[i], &world[payload-1][i]);
+			} else {
+				move_squirrel(&conf2[i], &world[payload-1][i]);
+			}
+			/*printf("[Task: %d] Keeping moved cell on %d %d\n", taskid, payload-1, i);*/
+		}
+	}
 	
 	//send to taskid+1
 	if(taskid != numtasks-1){
@@ -418,63 +532,63 @@ void resolve_conflicts(){
 		MPI_Recv(world[1], grid_size, mpi_world_cell_type, taskid-1, CONF_TAG-1, MPI_COMM_WORLD, &status);
 		/*printf("Task %d receiving line 0 and 1 to task %d\n", taskid, taskid-1);*/
 	}	
+
+
+	if(taskid==1){
+		printf("After Conflicts after transfer to Bottom\n");
+		printf("a\n");
+		for(i=0; i < grid_size; i++){
+			printf("%c(%d),", world[0][i].type, world[0][i].moved);
+		}
+		printf("\nb\n");
+		for(i=0; i < grid_size; i++){
+			printf("%c(%d),", world[1][i].type, world[1][i].moved);
+		}
+		printf("\n");
+	}
 }
 
 void start_world_simulation(void){
-	register int i, j;
+	register int i, j, btm_lim = bottom, top_lim = top;
 	
-	printf("[Task: %d] bottom: %d top: %d\n", taskid, bottom, top);
+	//printf("[Task: %d] bottom: %d top: %d\n", taskid, bottom, top);
 		
 	for(; number_of_generations > 0; --number_of_generations){
 		copy_world();
 
-		/* update 'red' cells, think chessboard */
-		for(i = bottom; i < top; ++i){
-			/*printf("[Task: %d] Updating line %d (%d)\n", taskid, i, GET_X(world[i][0].number));*/
-			for (j = i & 1; j < grid_size; j += 2)
-				update_world_cell(i, j, 0);
-		}
-		
-		/* update 'n-1' */
 		if(taskid != MASTER){
-			printf("[Task: %d] Updating n-1 line %d (%d) PAYLOAD: %d\n", taskid, bottom-1, GET_X(world[bottom-1][0].number),payload);
-			for (j = (bottom-1) & 1; j < grid_size; j += 2)
-				update_world_cell(bottom-1, j, 1);
+			btm_lim--;
+		} 
+		if(taskid != numtasks-1) {
+			top_lim++;
 		}
-		
-		/* update 'n+1' */
-		if(taskid != numtasks-1){
-			printf("[Task: %d] Updating n+1 line %d (%d) PAYLOAD: %d\n", taskid, top, GET_X(world[top][0].number), payload);
-			for (j = (top) & 1; j < grid_size; j += 2)
-				update_world_cell(top, j, 1);
+
+		/* update 'red' cells, think chessboard */
+		for(i = btm_lim; i < top_lim; ++i){
+			//printf("[Task: %d] Updating line %d (%d)\n", taskid, i, GET_X(world[i][0].number));
+			for (j = 0; j < grid_size; j++){
+				if(get_cell_color(&world[i][j]) == RED){
+					update_world_cell(i, j);
+				}
+			}
 		}
-				
-		/* resolve conflicts */
-		resolve_conflicts();
+	
+		resolve_conflicts(RED);
 		copy_world();
 
-		
-		/* update 'black' cells, think chessboard */
-		for(i = bottom; i < top; ++i)
-			for (j = !(i & 1); j < grid_size; j += 2)
-				update_world_cell(i, j, 0);
-				
-		/* update 'n-1' */
-		if(taskid != MASTER){
-			printf("[Task: %d] Updating n-1 line %d (%d) PAYLOAD: %d\n", taskid, bottom-1, GET_X(world[bottom-1][0].number),payload);
-			for (j = !((bottom-1) & 1); j < grid_size; j += 2)
-				update_world_cell(bottom-1, j, 1);
-		}
-		
-		/* update 'n+1' */
-		if(taskid != numtasks-1){
-			printf("[Task: %d] Updating n+1 line %d (%d) PAYLOAD: %d\n", taskid, top, GET_X(world[top][0].number), payload);
-			for (j = !(top & 1); j < grid_size; j += 2)
-				update_world_cell(top, j, 1);
-		}
+		gather();
 
-		/* resolve conflicts */
-		resolve_conflicts();
+		/* update 'black' cells, think chessboard */
+		for(i = btm_lim; i < top_lim; ++i){
+			for (j = 0; j < grid_size; j++){
+				if(get_cell_color(&world[i][j]) == BLACK){
+					update_world_cell(i, j);
+				}
+			}
+		}
+			
+		
+		resolve_conflicts(BLACK);
 		
 		if(number_of_generations == 1)
 			return;
@@ -512,6 +626,7 @@ void freemem(void){
 	free(world);
 	free(world_previous);
 }
+
 
 int main(int argc, char **argv){
 
@@ -610,7 +725,6 @@ int main(int argc, char **argv){
 		}
 
 		initialize_world_array(payload );
-		printf("[%d] - chunk: %d, top: %d, bottom: %d\n", taskid, chunk_size, top, bottom);
 		
 		for( ; j < payload; j++){
 			MPI_Recv(world[j], grid_size, mpi_world_cell_type, MASTER, FILL_TAG, MPI_COMM_WORLD, &status);
@@ -620,20 +734,7 @@ int main(int argc, char **argv){
 
 	start_world_simulation();
 
-	//Sync to master
-	if(taskid == MASTER){
-		int i = top + 2;
-				
-		for(; i < grid_size; i++)
-			MPI_Recv(world[i], grid_size, mpi_world_cell_type, MPI_ANY_SOURCE, RECV_TAG+i, MPI_COMM_WORLD, &status);
-
-		print_grid(world, grid_size);
-	} else {
-		int i = bottom;
-
-		for( ; i < payload; i++)
-			MPI_Send(world[i], grid_size, mpi_world_cell_type, MASTER, RECV_TAG+GET_X(world[i][0].number), MPI_COMM_WORLD);
-	}
+	gather();
 
 
 	#ifdef GETTIME
