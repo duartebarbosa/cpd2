@@ -565,10 +565,10 @@ void start_world_simulation(void){
 		copy_world();
 
 		if(taskid != MASTER){
-			btm_lim--;
+			btm_lim = bottom - 1;
 		} 
 		if(taskid != numtasks-1) {
-			top_lim++;
+			top_lim = top + 1;
 		}
 
 		/* update 'red' cells, think chessboard */
@@ -601,10 +601,10 @@ void start_world_simulation(void){
 		if(number_of_generations == 1)
 			return;
 
-		for(i = bottom; i < top; ++i){
+		for(i = 0; i < payload; ++i){
 			for (j = 0; j < grid_size; ++j){
 				if (world[i][j].moved){
-					if (world[i][j].type == SQUIRREL){
+					if (world[i][j].type == SQUIRREL || world[i][j].type == SQUIRREL_IN_TREE){
 						world[i][j].breeding_period++;
 					} else if (world[i][j].type == WOLF){
 						world[i][j].starvation_period--;
