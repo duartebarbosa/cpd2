@@ -100,8 +100,10 @@ void parse_input(char* filename){
 
 	while(fscanf(input,"%hu %hu %c\n",&i, &j, &type) == 3){ /*All arguments read succesfully*/
 		world[i][j].type = type;
-		if(type == WOLF)
+		if(type == WOLF){
 			world[i][j].starvation_period = wolf_starvation_period;
+			printf("WOLF starvation 1 - %d\n", world[i][j].starvation_period);
+		}
 	}
 
 	if(fclose(input) == EOF)
@@ -124,6 +126,7 @@ void move_wolf(world_cell* cell, world_cell* dest_cell) {
 			dest_cell->type = cell->type;
 			dest_cell->breeding_period = cell->breeding_period;
 			dest_cell->starvation_period = wolf_starvation_period; 
+			printf("WOLF starvation 2 - %d\n", dest_cell.starvation_period);
 			
 			/* clean cell */
 			cleanup_cell(cell);
@@ -139,6 +142,8 @@ void move_wolf(world_cell* cell, world_cell* dest_cell) {
 				dest_cell->starvation_period = MAX_STARV(cell, dest_cell);
 			}
 			
+						printf("WOLF starvation 3 - %d\n", dest_cell.starvation_period);
+
 			/* clean cell */
 			cleanup_cell(cell);
 			break;
@@ -157,8 +162,13 @@ void move_wolf(world_cell* cell, world_cell* dest_cell) {
 				cell->moved = NEW_BORN;
 				cell->breeding_period = dest_cell->breeding_period = 0;
 				cell->starvation_period = wolf_starvation_period;
-			} else
+				printf("WOLF starvation 5 - %d\n", cell.starvation_period);
+			} else {
 				cleanup_cell(cell);
+			}
+
+			printf("WOLF starvation 4 - %d\n", dest_cell.starvation_period);
+
 	}
 }
 
@@ -204,7 +214,8 @@ void move_squirrel(world_cell* cell, world_cell* dest_cell) {
 		case WOLF:
 			/* Wolf eating squirrel */
 			dest_cell->starvation_period = wolf_starvation_period; 
-			
+						printf("WOLF starvation 6 - %d\n", dest_cell.starvation_period);
+
 			if(cell->type == SQUIRREL_IN_TREE){
 				cell->type = TREE;		
 			} else {
