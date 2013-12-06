@@ -282,27 +282,6 @@ void update_world_cell(unsigned short x, unsigned short y){
 	}
 }
 
-void print_grid(world_cell ** world){
-	register int i = 0;
-
-	/*print header*/
-	printf("  ");
-	for(; i < grid_size; ++i)
-		printf("%d ", i);
-
-	printf("\n");
-
-	/*print world*/
-	for(i = 0; i < grid_size; ++i){
-		int j = 0;
-		printf("%d|", i);
-		for(; j < grid_size; ++j)
-			printf("%c|", world[i][j].type);
-
-		printf("\n");
-	}
-}
-
 void copy_world(void){
 	register int i;
 	for(i = 0; i < grid_size; ++i)

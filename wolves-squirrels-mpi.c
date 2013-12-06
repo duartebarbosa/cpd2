@@ -326,34 +326,6 @@ void update_world_cell(unsigned short x, unsigned short y){
 	}
 }
 
-void print_grid(world_cell ** world, int max){
-	register int i = 0;
-	
-	/*print header*/
-	printf("              ");
-	for(; i < grid_size; ++i)
-		printf("%d ", i);
-
-	printf("\n");
-	
-	/*print world*/
-	for(i = 0; i < max; ++i){
-		int j = 0;
-		if (i < bottom){
-			printf("[B Task: %d] %d|",taskid,  i);
-		} else if (i >=	top){
-			printf("[T Task: %d] %d|",taskid,  i);
-		} else {
-			printf("[- Task: %d] %d|",taskid,  i);
-		}
-		for(; j < grid_size; ++j){
-				printf("%c|", world[i][j].type, world[i][j].starvation_period);
-			
-		}
-		printf("\n");
-	}
-}
-
 void print_world(int max){
 	int i = 0, j;
 	for(; i < max; ++i){
