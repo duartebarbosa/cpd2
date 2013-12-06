@@ -115,7 +115,8 @@ inline void cleanup_cell(world_cell* cell){
 }
 
 void move_wolf(world_cell* cell, world_cell* dest_cell) {
-
+	#pragma omp critical (move)
+	{
 	dest_cell->moved = UPDATED;
 	switch(dest_cell->type){
 		case SQUIRREL:
@@ -159,7 +160,7 @@ void move_wolf(world_cell* cell, world_cell* dest_cell) {
 			} else {
 				cleanup_cell(cell);
 			}
-
+	}
 	}
 }
 
@@ -171,6 +172,8 @@ inline void move_squirrel_in_tree(world_cell* cell){
 }
 
 void move_squirrel(world_cell* cell, world_cell* dest_cell) {
+	#pragma omp critical (move)
+	{
 	dest_cell->moved = UPDATED;
 	switch(dest_cell->type){
 		case TREE:
@@ -230,6 +233,7 @@ void move_squirrel(world_cell* cell, world_cell* dest_cell) {
 				} else
 					cell->type = EMPTY;
 			}
+	}
 	}
 }
 
@@ -385,6 +389,7 @@ void gather(){
 
 void copy_world(){
 	register int i;
+	#pragma omp parallel for
 	for(i = 0; i < payload; ++i)
 		memcpy(world_previous[i], world[i], grid_size*sizeof(world_cell));
 }
@@ -481,6 +486,7 @@ void start_world_simulation(void){
 			top_lim = top + 1;
 
 		/* update 'red' cells, think chessboard */
+		#pragma omp parallel for private(j)
 		for(i = btm_lim; i < top_lim; ++i){
 			for (j = 0; j < grid_size; j++){
 				if(get_cell_color(&world[i][j]) == RED){
@@ -493,6 +499,7 @@ void start_world_simulation(void){
 		copy_world();
 
 		/* update 'black' cells, think chessboard */
+		#pragma omp parallel for private(j)
 		for(i = btm_lim; i < top_lim; ++i){
 			for (j = 0; j < grid_size; j++){
 				if(get_cell_color(&world[i][j]) == BLACK){
@@ -506,6 +513,7 @@ void start_world_simulation(void){
 		if(number_of_generations == 1)
 			return;
 
+		#pragma omp parallel for private(j)
 		for(i = 0; i < payload; ++i){
 			for (j = 0; j < grid_size; ++j){
 				if (world[i][j].moved == UPDATED || world[i][j].moved == MOVED){
