@@ -82,7 +82,7 @@ void initialize_world_array(int max){
 }
 
 void parse_input(char* filename){
-	unsigned int i, j;
+	int i, j;
 	char type;
 	FILE *input;
 
@@ -98,7 +98,7 @@ void parse_input(char* filename){
 
 	initialize_world_array(grid_size);
 
-	while(fscanf(input,"%du %du %c\n",&i, &j, &type) == 3){ /*All arguments read succesfully*/
+	while(fscanf(input,"%d %d %c\n",&i, &j, &type) == 3){ /*All arguments read succesfully*/
 		world[i][j].type = type;
 		if(type == WOLF){
 			world[i][j].starvation_period = wolf_starvation_period;
@@ -109,9 +109,7 @@ void parse_input(char* filename){
 		exit(3);
 }
 
-
-
-void cleanup_cell(world_cell* cell){
+inline void cleanup_cell(world_cell* cell){
 	cell->type = EMPTY;
 	cell->breeding_period = cell->starvation_period = 0;
 }
@@ -122,7 +120,7 @@ void move_wolf(world_cell* cell, world_cell* dest_cell) {
 	switch(dest_cell->type){
 		case SQUIRREL:
 			/* Wolf eating squirrel */
-			dest_cell->type = cell->type;
+			dest_cell->type = WOLF;
 			dest_cell->breeding_period = cell->breeding_period;
 			dest_cell->starvation_period = wolf_starvation_period; 
 			
@@ -131,7 +129,7 @@ void move_wolf(world_cell* cell, world_cell* dest_cell) {
 			break;
 		case WOLF:
 			/* Wolf fighting wolf */
-			dest_cell->type = cell->type;
+			dest_cell->type = WOLF;
 			/* same starvation */			
 			if(cell->starvation_period == dest_cell->starvation_period){
 				dest_cell->breeding_period = MAX_BREED(cell, dest_cell);
@@ -148,7 +146,7 @@ void move_wolf(world_cell* cell, world_cell* dest_cell) {
 				printf("Shouldn't happen, wolf moving to: %c\n", dest_cell->type); /* why the hell is this throwin' up wolfs?! */
 			}
 			/* simple Wolf */
-			dest_cell->type = cell->type;
+			dest_cell->type = WOLF;
 			dest_cell->breeding_period = cell->breeding_period;
 			dest_cell->starvation_period = cell->starvation_period;
 			
