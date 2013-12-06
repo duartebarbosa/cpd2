@@ -383,7 +383,7 @@ void print_grid(world_cell ** world, int max){
 			printf("[- Task: %d] %d|",taskid,  i);
 		}
 		for(; j < grid_size; ++j){
-				printf("%c|", world[i][j].type);
+				printf("%c(%d)|", world[i][j].type, world[i][j].breeding_period);
 			
 		}
 		printf("\n");
@@ -437,16 +437,10 @@ int get_cell_color(world_cell* cell){
 	}
 }
 
-void resolve_conflicts(int generation_color){
+void resolve_conflicts(int generation_color, int gen_number){
 	int i;
 	world_cell* conf1 = malloc(grid_size*sizeof(world_cell));
 	world_cell* conf2 = malloc(grid_size*sizeof(world_cell));
-
-	if(generation_color == RED){
-		printf("[Task: %d] *** RED CONFLICTS ***\n", taskid);
-	} else {
-		printf("[Task: %d] *** BLACK CONFLICTS %d ***\n", taskid, generation_color);
-	}
 
 	//send to taskid-1
 	if(taskid != MASTER){
@@ -465,6 +459,7 @@ void resolve_conflicts(int generation_color){
 	}
 
 	if(taskid==0){
+		printf("GEN: %d, TASK 0\n", gen_number);
 		printf("a\n");
 		for(i=0; i < grid_size; i++){
 			printf("%c(%d),", world[payload-2][i].type, world[payload-2][i].moved);
@@ -543,16 +538,16 @@ void resolve_conflicts(int generation_color){
 
 
 	if(taskid==1){
-		printf("After Conflicts after transfer to Bottom\n");
+		printf("GEN: %d ::: After Conflicts after transfer to Bottom\n", gen_number);
 		printf("a\n");
 		for(i=0; i < grid_size; i++){
-			printf("%c(%d),", world[0][i].type, world[0][i].moved);
+			printf("%c(bp:%d),", world[0][i].type, world[0][i].breeding_period);
 		}
 		printf("\nb\n");
 		for(i=0; i < grid_size; i++){
-			printf("%c(%d),", world[1][i].type, world[1][i].moved);
+			printf("%c(bp:%d),", world[1][i].type, world[1][i].breeding_period);
 		}
-		printf("\n");
+		printf("\n********\n");
 	}
 }
 
@@ -581,7 +576,7 @@ void start_world_simulation(void){
 			}
 		}
 	
-		resolve_conflicts(RED);
+		resolve_conflicts(RED, number_of_generations);
 		copy_world();
 
 		//gather();
@@ -596,7 +591,7 @@ void start_world_simulation(void){
 		}
 			
 		
-		resolve_conflicts(BLACK);
+		resolve_conflicts(BLACK, number_of_generations);
 		
 		if(number_of_generations == 1)
 			return;
