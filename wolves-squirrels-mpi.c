@@ -407,7 +407,7 @@ void gather(){
 		for(; i < grid_size; i++)
 			MPI_Recv(world[i], grid_size, mpi_world_cell_type, MPI_ANY_SOURCE, RECV_TAG+i, MPI_COMM_WORLD, &status);
 
-		print_grid(world, grid_size);
+		print_world(grid_size);
 	} else {
 		int i = bottom;
 
