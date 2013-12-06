@@ -397,6 +397,16 @@ void print_grid(world_cell ** world, int max){
 	}
 }
 
+void print_world(int max){
+	int i = 0, j;
+	for(; i < max; ++i){
+		for (j = 0; j < grid_size; ++j){
+			if(world[i][j].type != EMPTY)
+				printf("%d %d %c\n", i, j, world[i][j].type);
+		}
+	}
+}
+
 void gather(){
 	MPI_Status status;
 
@@ -423,15 +433,6 @@ void copy_world(){
 		memcpy(world_previous[i], world[i], grid_size*sizeof(world_cell));
 }
 
-void print_world(int max){
-	int i = 0, j;
-	for(; i < max; ++i){
-		for (j = 0; j < grid_size; ++j){
-			if(world[i][j].type != EMPTY)
-				printf("%d %d %c\n", i, j, world[i][j].type);
-		}
-	}
-}
 
 int get_cell_color(world_cell* cell){
 	int x = GET_X(cell->number);
