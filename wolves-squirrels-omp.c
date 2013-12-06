@@ -184,7 +184,6 @@ void move_squirrel(world_cell* cell, world_cell* dest_cell) {
 				dest_cell->type = cell->type;
 				cleanup_cell(cell);
 			}
-			
 			break;
 		case SQUIRREL_IN_TREE:
 			dest_cell->breeding_period = MAX_BREED(cell, dest_cell);

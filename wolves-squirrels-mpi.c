@@ -123,7 +123,7 @@ void move_wolf(world_cell* cell, world_cell* dest_cell) {
 			dest_cell->type = WOLF;
 			dest_cell->breeding_period = cell->breeding_period;
 			dest_cell->starvation_period = wolf_starvation_period; 
-			
+
 			/* clean cell */
 			cleanup_cell(cell);
 			break;
@@ -137,7 +137,7 @@ void move_wolf(world_cell* cell, world_cell* dest_cell) {
 				dest_cell->breeding_period = (cell->starvation_period > dest_cell->starvation_period ? cell->breeding_period : dest_cell->breeding_period);
 				dest_cell->starvation_period = MAX_STARV(cell, dest_cell);
 			}
-			
+
 			/* clean cell */
 			cleanup_cell(cell);
 			break;
@@ -163,6 +163,13 @@ void move_wolf(world_cell* cell, world_cell* dest_cell) {
 	}
 }
 
+inline void move_squirrel_in_tree(world_cell* cell){
+	if(cell->type == SQUIRREL_IN_TREE)
+		cell->type = TREE;
+	else
+		cleanup_cell(cell);
+}
+
 void move_squirrel(world_cell* cell, world_cell* dest_cell) {
 	dest_cell->moved = UPDATED;
 	switch(dest_cell->type){
@@ -170,48 +177,28 @@ void move_squirrel(world_cell* cell, world_cell* dest_cell) {
 			dest_cell->breeding_period = cell->breeding_period;
 			dest_cell->type = SQUIRREL_IN_TREE;
 
-			if(cell->type == SQUIRREL_IN_TREE){
-				cell->type = TREE;		
-			} else {
-				cleanup_cell(cell);
-			}
-
+			move_squirrel_in_tree(cell);
 			break;
 		case SQUIRREL:
 			/* Squirrel moving to squirrel*/
-			
 			dest_cell->breeding_period = MAX_BREED(cell, dest_cell);
 
 			if(cell->type == SQUIRREL_IN_TREE){
 				dest_cell->type = SQUIRREL;
-				cell->type = TREE;		
+				cell->type = TREE;
 			} else {
 				dest_cell->type = cell->type;
 				cleanup_cell(cell);
 			}
-			
 			break;
 		case SQUIRREL_IN_TREE:
-			dest_cell->type = SQUIRREL_IN_TREE;
 			dest_cell->breeding_period = MAX_BREED(cell, dest_cell);
-
-			if(cell->type == SQUIRREL_IN_TREE){
-				cell->type = TREE;		
-			} else {
-				cleanup_cell(cell);
-			}
-
+			move_squirrel_in_tree(cell);
 			break;
 		case WOLF:
 			/* Wolf eating squirrel */
-			dest_cell->starvation_period = wolf_starvation_period; 
-
-			if(cell->type == SQUIRREL_IN_TREE){
-				cell->type = TREE;		
-			} else {
-				cleanup_cell(cell);
-			}
-			
+			dest_cell->starvation_period = wolf_starvation_period;
+			move_squirrel_in_tree(cell);
 			break;
 		default:
 			if(dest_cell-> type != EMPTY){
@@ -291,12 +278,6 @@ void update_world_cell(unsigned short x, unsigned short y){
 	world_cell** possible_cells;
 	int count = 0;
 
-	//printf("[Task %d] Updating cell %d %d\n", taskid, x, y);
-
-	/*if(x==8&&y==0&&taskid==3){
-		printf("[Task %d] POSSIBLE CELL FOR SQUIRREL\n", taskid);
-	}*/
-
 	/* perfom logic for each cell type */
 	switch(cell->type){
 		case EMPTY:
@@ -314,21 +295,10 @@ void update_world_cell(unsigned short x, unsigned short y){
 				
 				if(squirrels_found){
 					world_cell* prev_gen_dest_cell = squirrel_cells[CHOOSE_CELL(cell, squirrels_found)];
-					/*if((force_inbound && ((GET_REAL_X(prev_gen_dest_cell) < bottom) || (GET_REAL_X(prev_gen_dest_cell) > top)))){
-						printf("Ignoring not inbound move. Remaining at %d %d but wants to move to %d %d\n", GET_X(cell->number), GET_Y(cell), GET_X(prev_gen_dest_cell), GET_Y(prev_gen_dest_cell));
-						cell->future_number = prev_gen_dest_cell->number;
-					} else {*/
-						move_wolf(cell, &world[GET_REAL_X(prev_gen_dest_cell)][GET_Y(prev_gen_dest_cell)]);
-					//}
-					
+					move_wolf(cell, &world[GET_REAL_X(prev_gen_dest_cell)][GET_Y(prev_gen_dest_cell)]);
 				} else if (count) {
 					world_cell* prev_gen_dest_cell = possible_cells[CHOOSE_CELL(cell, count--)];
-					/*if((force_inbound && ((GET_REAL_X(prev_gen_dest_cell) < bottom) || (GET_REAL_X(prev_gen_dest_cell) > top)))){
-						printf("Ignoring not inbound move. Remaining at %d %d but wants to move to %d %d\n", GET_X(cell->number), GET_Y(cell), GET_X(prev_gen_dest_cell->number), GET_Y(prev_gen_dest_cell->number));
-						cell->future_number = prev_gen_dest_cell->number;
-					} else {*/
-						move_wolf(cell, &world[GET_REAL_X(prev_gen_dest_cell)][GET_Y(prev_gen_dest_cell)]);
-					//}
+					move_wolf(cell, &world[GET_REAL_X(prev_gen_dest_cell)][GET_Y(prev_gen_dest_cell)]);
 				} else {
 					cell->moved = UPDATED; //was updated anyways
 				}
@@ -344,14 +314,7 @@ void update_world_cell(unsigned short x, unsigned short y){
 
 			if (count) {
 				world_cell* prev_gen_dest_cell = possible_cells[CHOOSE_CELL(cell, count--)];
-				
-				/*if((force_inbound && ((GET_REAL_X(prev_gen_dest_cell) < bottom) || (GET_REAL_X(prev_gen_dest_cell) > top)))){
-					printf("Ignoring not inbound move. Remaining at %d %d but wants to move to %d %d\n", GET_X(cell->number), GET_Y(cell), GET_X(prev_gen_dest_cell->number), GET_Y(prev_gen_dest_cell->number));
-					cell->future_number = prev_gen_dest_cell->number;
-				} else {*/
-					move_squirrel(cell, &world[GET_REAL_X(prev_gen_dest_cell)][GET_Y(prev_gen_dest_cell)]);
-				//}
-		
+				move_squirrel(cell, &world[GET_REAL_X(prev_gen_dest_cell)][GET_Y(prev_gen_dest_cell)]);
 			} else {
 				cell->moved = UPDATED; //was updated anyways
 			}
@@ -362,9 +325,6 @@ void update_world_cell(unsigned short x, unsigned short y){
 			break;
 	}
 }
-
-
-
 
 void print_grid(world_cell ** world, int max){
 	register int i = 0;
@@ -410,7 +370,7 @@ void gather(){
 	//Sync to master
 	if(taskid == MASTER){
 		int i = top + 2;
-				
+
 		for(; i < grid_size; i++)
 			MPI_Recv(world[i], grid_size, mpi_world_cell_type, MPI_ANY_SOURCE, RECV_TAG+i, MPI_COMM_WORLD, &status);
 
@@ -418,10 +378,9 @@ void gather(){
 	} else {
 		int i = bottom;
 
-		for( ; i < payload; i++)
+		for(; i < payload; i++)
 			MPI_Send(world[i], grid_size, mpi_world_cell_type, MASTER, RECV_TAG+GET_X(world[i][0].number), MPI_COMM_WORLD);
 	}
-
 }
 
 void copy_world(){
@@ -452,7 +411,6 @@ void resolve_conflicts(int generation_color, int gen_number){
 		MPI_Request size_reqs[2];
 		MPI_Isend(world[0], grid_size, mpi_world_cell_type, taskid-1, CONF_TAG, MPI_COMM_WORLD, &size_reqs[0]);
 		MPI_Isend(world[1], grid_size, mpi_world_cell_type, taskid-1, CONF_TAG+1, MPI_COMM_WORLD, &size_reqs[1]);
-		/*printf("Task %d sending line 0  and 1 to task %d\n", taskid, taskid-1);*/
 	}
 	
 	//receive from taskid +1
@@ -460,69 +418,39 @@ void resolve_conflicts(int generation_color, int gen_number){
 		MPI_Status status;
 		MPI_Recv(conf1, grid_size, mpi_world_cell_type, taskid+1, CONF_TAG, MPI_COMM_WORLD, &status);
 		MPI_Recv(conf2, grid_size, mpi_world_cell_type, taskid+1, CONF_TAG+1, MPI_COMM_WORLD, &status);
-		/*printf("Task %d receiving last lines from task %d\n", taskid, taskid+1);*/
 	}
 
-	// if(taskid==2){
-	// 	printf("\nGEN: %d, TASK 0 COLOR %d\n", gen_number, generation_color);
-	// 	printf("a\n");
-	// 	for(i=0; i < grid_size; i++){
-	// 		printf("%c(%d),", world[payload-2][i].type, world[payload-2][i].starvation_period);
-	// 	}
-	// 	printf("\nb\n");
-	// 	for(i=0; i < grid_size; i++){
-	// 		printf("%c(%d),", world[payload-1][i].type, world[payload-1][i].starvation_period);
-	// 	}
-	// 	printf("\na\n");
-	// 	for(i=0; i < grid_size; i++){
-	// 		printf("%c(%d),", conf1[i].type, conf1[i].starvation_period);
-	// 	}
-	// 	printf("\nb\n");
-	// 	for(i=0; i < grid_size; i++){
-	// 		printf("%c(%d),", conf2[i].type, conf2[i].starvation_period);
-	// 	}
-	// 	printf("\n");
-	// }
 	//resolve conflicts on n+1 n+2
 	// Keep all moved cells from THIS generation (world), discard others
 	for(i=0; i < grid_size; i++){
 		//discard unmoved cells from my world with color 'generation_color'
 		if(((world[payload-2][i].moved != UPDATED) && (world[payload-2][i].moved != NEW_BORN)) && get_cell_color(&world[payload-2][i]) == generation_color && world[payload-2][i].type != ICE && world[payload-2][i].type != TREE && world[payload-2][i].type != EMPTY){
-			
 			cleanup_cell(&world[payload-2][i]);
-			/*if(taskid==0)
-				printf("[Task: %d] Discarding unmoved cell on %d %d\n", taskid, payload-2, i);*/
 		} else if (world[payload-2][i].moved == UPDATED || world[payload-2][i].moved == NEW_BORN) {
 			world[payload-2][i].moved = MOVED;
 		}
 		if(((world[payload-1][i].moved != UPDATED) && (world[payload-1][i].moved != NEW_BORN)) && get_cell_color(&world[payload-1][i]) == generation_color && world[payload-1][i].type != ICE && world[payload-1][i].type != TREE && world[payload-1][i].type != EMPTY){
 			cleanup_cell(&world[payload-1][i]);
-			/*if(taskid==0)
-				printf("[Task: %d] Discarding unmoved cell on %d %d\n", taskid, payload-1, i);*/
 		} else if (world[payload-1][i].moved == UPDATED || world[payload-1][i].moved == NEW_BORN){
 			world[payload-1][i].moved = MOVED;
-			//if(taskid==0)
-				//printf("[Task: %d] Processed cell %d %d (%c, %d) %d but did nothing\n", taskid, payload-1, i, world[payload-1][i].type, world[payload-1][i].moved, get_cell_color(&world[payload-1][i]));
 		}
 		if(conf1[i].moved == UPDATED || conf1[i].moved == NEW_BORN){
 			//move to my world
-			if(conf1[i].type == WOLF){
+			if(conf1[i].type == WOLF)
 				move_wolf(&conf1[i], &world[payload-2][i]);
-			} else {
+			else
 				move_squirrel(&conf1[i], &world[payload-2][i]);
-			}
+
 			world[payload-2][i].moved = MOVED;
-			/*printf("[Task: %d] Keeping moved cell on %d %d\n", taskid, payload-2, i);*/
 		}
 		if(conf2[i].moved == UPDATED || conf2[i].moved == NEW_BORN){
 			//move to my world
-			if(conf2[i].type == WOLF){
+			if(conf2[i].type == WOLF)
 				move_wolf(&conf2[i], &world[payload-1][i]);
-			} else {
+			else
 				move_squirrel(&conf2[i], &world[payload-1][i]);
-			}
+
 			world[payload-1][i].moved = MOVED;
-			/*printf("[Task: %d] Keeping moved cell on %d %d\n", taskid, payload-1, i);*/
 		}
 	}
 	
@@ -531,55 +459,29 @@ void resolve_conflicts(int generation_color, int gen_number){
 		MPI_Request size_reqs[2];
 		MPI_Isend(world[payload-2], grid_size, mpi_world_cell_type, taskid+1, CONF_TAG-2, MPI_COMM_WORLD, &size_reqs[0]);
 		MPI_Isend(world[payload-1], grid_size, mpi_world_cell_type, taskid+1, CONF_TAG-1, MPI_COMM_WORLD, &size_reqs[1]);
-		/*printf("Task %d sending line %d and %d to task %d\n", taskid, payload-2, payload-1, taskid+1);*/
 	}	
 	//receive from taskid -1
 	if(taskid != MASTER){
 		MPI_Status status;
 		MPI_Recv(world[0], grid_size, mpi_world_cell_type, taskid-1, CONF_TAG-2, MPI_COMM_WORLD, &status);
 		MPI_Recv(world[1], grid_size, mpi_world_cell_type, taskid-1, CONF_TAG-1, MPI_COMM_WORLD, &status);
-		/*printf("Task %d receiving line 0 and 1 to task %d\n", taskid, taskid-1);*/
-	}	
-
-
-	/*if(taskid==3)
-	{
-		printf("GEN: %d ::: After Conflicts after transfer to Bottom COLOR %d\n", gen_number, generation_color);
-		printf("a\n");
-		for(i=0; i < grid_size; i++){
-			printf("%c(sp:%d),", world[0][i].type, world[0][i].starvation_period);
-		}
-		printf("\nb\n");
-		for(i=0; i < grid_size; i++){
-			printf("%c(sp:%d),", world[1][i].type, world[1][i].starvation_period);
-		}
-		printf("\n********\n");
-	} else if (taskid==2){
-		printf("\nGEN: %d ::: AFTER CONFLICTS SENDING COLOR %d\n", gen_number, generation_color);
-		for(i = 0; i < grid_size; i++){
-			printf("%c(sp:%d),", world[payload-2][i].type, world[payload-2][i].starvation_period);
-		}
-	}*/
+	}
 }
 
 void start_world_simulation(void){
 	register int i, j, btm_lim = bottom, top_lim = top;
-	
-	//printf("[Task: %d] bottom: %d top: %d\n", taskid, bottom, top);
-		
+
 	for(; number_of_generations > 0; --number_of_generations){
 		copy_world();
 
-		if(taskid != MASTER){
+		if(taskid != MASTER)
 			btm_lim = bottom - 1;
-		} 
-		if(taskid != numtasks-1) {
+
+		if(taskid != numtasks-1)
 			top_lim = top + 1;
-		}
 
 		/* update 'red' cells, think chessboard */
 		for(i = btm_lim; i < top_lim; ++i){
-			//printf("[Task: %d] Updating line %d (%d)\n", taskid, i, GET_X(world[i][0].number));
 			for (j = 0; j < grid_size; j++){
 				if(get_cell_color(&world[i][j]) == RED){
 					update_world_cell(i, j);
@@ -590,8 +492,6 @@ void start_world_simulation(void){
 		resolve_conflicts(RED, number_of_generations);
 		copy_world();
 
-		//gather();
-
 		/* update 'black' cells, think chessboard */
 		for(i = btm_lim; i < top_lim; ++i){
 			for (j = 0; j < grid_size; j++){
@@ -600,10 +500,9 @@ void start_world_simulation(void){
 				}
 			}
 		}
-			
-		
+
 		resolve_conflicts(BLACK, number_of_generations);
-		
+
 		if(number_of_generations == 1)
 			return;
 
@@ -653,14 +552,13 @@ int main(int argc, char **argv){
 	#endif
 
 	const int nitems=3;
-	int          blocklengths[3] = {2,2,1};
+	int blocklengths[3] = {2,2,1};
 	MPI_Datatype types[3] = {MPI_CHAR, MPI_UNSIGNED_SHORT, MPI_UNSIGNED};
-	MPI_Aint     offsets[3];
+	MPI_Aint offsets[3];
 
 	offsets[0] = offsetof(world_cell, type);
 	offsets[1] = offsetof(world_cell, breeding_period);
 	offsets[2] = offsetof(world_cell, number);
-	
 
 	/* MPI Initialization */
 	if (MPI_Init(&argc, &argv) != MPI_SUCCESS) {
@@ -689,8 +587,6 @@ int main(int argc, char **argv){
 
 		info[0] = grid_size;
 
-		//print_grid(world, grid_size);
-
 		bottom = 0;
 		top = chunk_size = CHUNK;
 		payload = top + 2;
@@ -712,17 +608,15 @@ int main(int argc, char **argv){
 			else
 				top_task += 2;
 
-			for( ; bottom_task < top_task; bottom_task++){
-				/*printf("[%s] Sending line %d to %d\n", hostname, bottom_task, task);*/
+			for( ; bottom_task < top_task; bottom_task++)
 				MPI_Send(world[bottom_task], grid_size, mpi_world_cell_type, task, FILL_TAG, MPI_COMM_WORLD);
-			}
 		}
 
 	} else {
 		int j = 0;
 
 		MPI_Recv(info, 5, MPI_INT, MASTER, INIT_TAG, MPI_COMM_WORLD, &status);
-		
+
 		grid_size = info[0];
 		wolf_breeding_period = info[1];
 		squirrel_breeding_period = info[2];
@@ -741,20 +635,19 @@ int main(int argc, char **argv){
 
 		initialize_world_array(payload );
 		
-		for( ; j < payload; j++){
+		for( ; j < payload; j++)
 			MPI_Recv(world[j], grid_size, mpi_world_cell_type, MASTER, FILL_TAG, MPI_COMM_WORLD, &status);
-		}
-		
 	}
 
 	start_world_simulation();
 
 	gather();
 
-
 	#ifdef GETTIME
-	if(taskid == MASTER)
+	if(taskid == MASTER){
 	  printf("MPI time: %lf\n", MPI_Wtime() - start);
+	  print_world();
+	}
 	#endif
 
 	//freemem();
