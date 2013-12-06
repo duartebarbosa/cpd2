@@ -87,20 +87,16 @@ inline void cleanup_cell(world_cell* cell){
 void move_wolf(world_cell* cell, world_cell* dest_cell) {
 	#pragma omp critical (move)
 	{
-	dest_cell->moved = 1;
 	switch(dest_cell->type){
 		case SQUIRREL:
 			/* Wolf eating squirrel */
-			dest_cell->type = cell->type;
 			dest_cell->breeding_period = cell->breeding_period;
 			dest_cell->starvation_period = wolf_starvation_period; 
-			
-			/* clean cell */
+
 			cleanup_cell(cell);
 			break;
 		case EMPTY:
 			/* simple Wolf */
-			dest_cell->type = cell->type;
 			dest_cell->breeding_period = cell->breeding_period;
 			dest_cell->starvation_period = cell->starvation_period;
 
@@ -114,21 +110,21 @@ void move_wolf(world_cell* cell, world_cell* dest_cell) {
 			break;
 		case WOLF:
 			/* Wolf fighting wolf */
-			dest_cell->type = cell->type;
-			/* same starvation */			
 			if(cell->starvation_period == dest_cell->starvation_period){
 				dest_cell->breeding_period = MAX_BREED(cell, dest_cell);
 			} else {
 				dest_cell->breeding_period = (cell->starvation_period > dest_cell->starvation_period ? cell->breeding_period : dest_cell->breeding_period);
 				dest_cell->starvation_period = MAX_STARV(cell, dest_cell);
 			}
-			
-			/* clean cell */
+
 			cleanup_cell(cell);
 			break;
-		default:
-			printf("Shouldn't happen, wolf moving to: %c\n", dest_cell->type); /* why the hell is this throwin' up wolfs?! */
+		/*default:
+			printf("Shouldn't happen, wolf moving to: %c\n", dest_cell->type);
+			return;*/
 	}
+	dest_cell->moved = 1;
+	dest_cell->type = WOLF;
 	}
 }
 
@@ -199,8 +195,8 @@ void move_squirrel(world_cell* cell, world_cell* dest_cell) {
 			dest_cell->starvation_period = wolf_starvation_period;
 			move_squirrel_in_tree(cell);
 			break;
-		default:
-			printf("Shouldn't happen, squirrel moving to: %c\n", dest_cell->type);
+		/*default:
+			printf("Shouldn't happen, squirrel moving to: %c\n", dest_cell->type);*/
 	}
 }
 }

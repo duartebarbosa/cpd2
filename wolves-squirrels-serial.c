@@ -117,9 +117,9 @@ void move_wolf(world_cell* cell, world_cell* dest_cell) {
 
 			cleanup_cell(cell);
 			break;
-		default:
-			printf("Shouldn't happen, wolf moving to: %c\n", dest_cell->type); /* why the hell is this throwin' up wolfs?! */
-			return;
+		/*default:
+			printf("Shouldn't happen, wolf moving to: %c\n", dest_cell->type);
+			return;*/
 	}
 	dest_cell->moved = 1;
 	dest_cell->type = WOLF;
@@ -190,8 +190,8 @@ void move_squirrel(world_cell* cell, world_cell* dest_cell) {
 			dest_cell->starvation_period = wolf_starvation_period;
 			move_squirrel_in_tree(cell);
 			break;
-		default:
-			printf("Shouldn't happen, squirrel moving to: %c\n", dest_cell->type);
+		/*default:
+			printf("Shouldn't happen, squirrel moving to: %c\n", dest_cell->type);*/
 	}
 }
 
