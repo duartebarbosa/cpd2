@@ -10,6 +10,7 @@
 #define SQUIRREL_IN_TREE '$'
 #define EMPTY ' '
 
+#define NEW_BORN 3
 #define UPDATED 2
 #define MOVED 1
 
@@ -153,6 +154,7 @@ void move_wolf(world_cell* cell, world_cell* dest_cell) {
 			/* clean cell or reproduce*/
 			if(dest_cell->breeding_period >= wolf_breeding_period && dest_cell->starvation_period > 1){
 				cell->type = WOLF;
+				cell->moved = NEW_BORN;
 				cell->breeding_period = dest_cell->breeding_period = 0;
 				cell->starvation_period = wolf_starvation_period;
 			} else
@@ -235,6 +237,7 @@ void move_squirrel(world_cell* cell, world_cell* dest_cell) {
 				cleanup_cell(cell);
 				if(dest_cell->breeding_period >= squirrel_breeding_period){
 					cell->type = SQUIRREL;
+					cell->moved = UPDATED;
 					dest_cell->breeding_period = 0;
 				} else
 					cell->type = EMPTY;
@@ -383,7 +386,7 @@ void print_grid(world_cell ** world, int max){
 			printf("[- Task: %d] %d|",taskid,  i);
 		}
 		for(; j < grid_size; ++j){
-				printf("%c(%d)|", world[i][j].type, world[i][j].breeding_period);
+				printf("%c(%d)|", world[i][j].type, world[i][j].starvation_period);
 			
 		}
 		printf("\n");
@@ -458,23 +461,23 @@ void resolve_conflicts(int generation_color, int gen_number){
 		/*printf("Task %d receiving last lines from task %d\n", taskid, taskid+1);*/
 	}
 
-	if(taskid==0){
-		printf("GEN: %d, TASK 0\n", gen_number);
+	if(taskid==2){
+		printf("\nGEN: %d, TASK 0 COLOR %d\n", gen_number, generation_color);
 		printf("a\n");
 		for(i=0; i < grid_size; i++){
-			printf("%c(%d),", world[payload-2][i].type, world[payload-2][i].moved);
+			printf("%c(%d),", world[payload-2][i].type, world[payload-2][i].starvation_period);
 		}
 		printf("\nb\n");
 		for(i=0; i < grid_size; i++){
-			printf("%c(%d),", world[payload-1][i].type, world[payload-1][i].moved);
+			printf("%c(%d),", world[payload-1][i].type, world[payload-1][i].starvation_period);
 		}
 		printf("\na\n");
 		for(i=0; i < grid_size; i++){
-			printf("%c(%d),", conf1[i].type, conf1[i].moved);
+			printf("%c(%d),", conf1[i].type, conf1[i].starvation_period);
 		}
 		printf("\nb\n");
 		for(i=0; i < grid_size; i++){
-			printf("%c(%d),", conf2[i].type, conf2[i].moved);
+			printf("%c(%d),", conf2[i].type, conf2[i].starvation_period);
 		}
 		printf("\n");
 	}
@@ -482,24 +485,24 @@ void resolve_conflicts(int generation_color, int gen_number){
 	// Keep all moved cells from THIS generation (world), discard others
 	for(i=0; i < grid_size; i++){
 		//discard unmoved cells from my world with color 'generation_color'
-		if(world[payload-2][i].moved != UPDATED && get_cell_color(&world[payload-2][i]) == generation_color && world[payload-2][i].type != ICE && world[payload-2][i].type != TREE && world[payload-2][i].type != EMPTY){
+		if(((world[payload-2][i].moved != UPDATED) && (world[payload-2][i].moved != NEW_BORN)) && get_cell_color(&world[payload-2][i]) == generation_color && world[payload-2][i].type != ICE && world[payload-2][i].type != TREE && world[payload-2][i].type != EMPTY){
 			
 			cleanup_cell(&world[payload-2][i]);
 			/*if(taskid==0)
 				printf("[Task: %d] Discarding unmoved cell on %d %d\n", taskid, payload-2, i);*/
-		} else if (world[payload-2][i].moved == UPDATED) {
+		} else if (world[payload-2][i].moved == UPDATED || world[payload-2][i].moved == NEW_BORN) {
 			world[payload-2][i].moved = MOVED;
 		}
-		if(world[payload-1][i].moved != UPDATED && get_cell_color(&world[payload-1][i]) == generation_color && world[payload-1][i].type != ICE && world[payload-1][i].type != TREE && world[payload-1][i].type != EMPTY){
+		if(((world[payload-1][i].moved != UPDATED) && (world[payload-1][i].moved != NEW_BORN)) && get_cell_color(&world[payload-1][i]) == generation_color && world[payload-1][i].type != ICE && world[payload-1][i].type != TREE && world[payload-1][i].type != EMPTY){
 			cleanup_cell(&world[payload-1][i]);
 			/*if(taskid==0)
 				printf("[Task: %d] Discarding unmoved cell on %d %d\n", taskid, payload-1, i);*/
-		} else if (world[payload-1][i].moved == UPDATED){
+		} else if (world[payload-1][i].moved == UPDATED || world[payload-1][i].moved == NEW_BORN){
 			world[payload-1][i].moved = MOVED;
 			//if(taskid==0)
 				//printf("[Task: %d] Processed cell %d %d (%c, %d) %d but did nothing\n", taskid, payload-1, i, world[payload-1][i].type, world[payload-1][i].moved, get_cell_color(&world[payload-1][i]));
 		}
-		if(conf1[i].moved == UPDATED){
+		if(conf1[i].moved == UPDATED || conf1[i].moved == NEW_BORN){
 			//move to my world
 			if(conf1[i].type == WOLF){
 				move_wolf(&conf1[i], &world[payload-2][i]);
@@ -509,7 +512,7 @@ void resolve_conflicts(int generation_color, int gen_number){
 			world[payload-2][i].moved = MOVED;
 			/*printf("[Task: %d] Keeping moved cell on %d %d\n", taskid, payload-2, i);*/
 		}
-		if(conf2[i].moved == UPDATED){
+		if(conf2[i].moved == UPDATED || conf2[i].moved == NEW_BORN){
 			//move to my world
 			if(conf2[i].type == WOLF){
 				move_wolf(&conf2[i], &world[payload-1][i]);
@@ -537,17 +540,23 @@ void resolve_conflicts(int generation_color, int gen_number){
 	}	
 
 
-	if(taskid==1){
-		printf("GEN: %d ::: After Conflicts after transfer to Bottom\n", gen_number);
+	if(taskid==3)
+	{
+		/*printf("GEN: %d ::: After Conflicts after transfer to Bottom COLOR %d\n", gen_number, generation_color);
 		printf("a\n");
 		for(i=0; i < grid_size; i++){
-			printf("%c(bp:%d),", world[0][i].type, world[0][i].breeding_period);
+			printf("%c(sp:%d),", world[0][i].type, world[0][i].starvation_period);
 		}
 		printf("\nb\n");
 		for(i=0; i < grid_size; i++){
-			printf("%c(bp:%d),", world[1][i].type, world[1][i].breeding_period);
+			printf("%c(sp:%d),", world[1][i].type, world[1][i].starvation_period);
 		}
 		printf("\n********\n");
+	*/} else if (taskid==2){
+		printf("\nGEN: %d ::: AFTER CONFLICTS SENDING COLOR %d\n", gen_number, generation_color);
+		for(i = 0; i < grid_size; i++){
+			printf("%c(sp:%d),", world[payload-2][i].type, world[payload-2][i].starvation_period);
+		}
 	}
 }
 
@@ -598,10 +607,13 @@ void start_world_simulation(void){
 
 		for(i = 0; i < payload; ++i){
 			for (j = 0; j < grid_size; ++j){
-				if (world[i][j].moved){
+				if (world[i][j].moved == UPDATED || world[i][j].moved == MOVED){
 					if (world[i][j].type == SQUIRREL || world[i][j].type == SQUIRREL_IN_TREE){
 						world[i][j].breeding_period++;
 					} else if (world[i][j].type == WOLF){
+						if(world[i][j].starvation_period == 0){
+							printf("Should have died already\n");
+						}
 						world[i][j].starvation_period--;
 						world[i][j].breeding_period++;
 						/* wolf dies of starvation */
@@ -716,7 +728,7 @@ int main(int argc, char **argv){
 		squirrel_breeding_period = info[2];
 		wolf_starvation_period = info[3];
 		number_of_generations = info[4];
-		
+	
 		bottom = 2;
 		if(taskid == numtasks-1){
 			chunk_size = CHUNK + CHUNK_REMAINDER;
