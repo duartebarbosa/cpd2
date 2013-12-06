@@ -79,47 +79,25 @@ void parse_input(char* filename){
 		exit(3);
 }
 
-void cleanup_cell(world_cell* cell){
+inline void cleanup_cell(world_cell* cell){
 	cell->type = EMPTY;
 	cell->breeding_period = cell->starvation_period = 0;
 }
 
 void move_wolf(world_cell* cell, world_cell* dest_cell) {
-
-	dest_cell->moved = 1;
 	switch(dest_cell->type){
 		case SQUIRREL:
 			/* Wolf eating squirrel */
-			dest_cell->type = cell->type;
 			dest_cell->breeding_period = cell->breeding_period;
 			dest_cell->starvation_period = wolf_starvation_period; 
-			
-			/* clean cell */
+
 			cleanup_cell(cell);
 			break;
-		case WOLF:
-			/* Wolf fighting wolf */
-			dest_cell->type = cell->type;
-			/* same starvation */			
-			if(cell->starvation_period == dest_cell->starvation_period){
-				dest_cell->breeding_period = MAX_BREED(cell, dest_cell);
-			} else {
-				dest_cell->breeding_period = (cell->starvation_period > dest_cell->starvation_period ? cell->breeding_period : dest_cell->breeding_period);
-				dest_cell->starvation_period = MAX_STARV(cell, dest_cell);
-			}
-			
-			/* clean cell */
-			cleanup_cell(cell);
-			break;
-		default:
-			if(dest_cell-> type != EMPTY){
-				printf("Shouldn't happen, wolf moving to: %c\n", dest_cell->type); /* why the hell is this throwin' up wolfs?! */
-			}
+		case EMPTY:
 			/* simple Wolf */
-			dest_cell->type = cell->type;
 			dest_cell->breeding_period = cell->breeding_period;
 			dest_cell->starvation_period = cell->starvation_period;
-			
+
 			/* clean cell or reproduce*/
 			if(dest_cell->breeding_period >= wolf_breeding_period && dest_cell->starvation_period > 1){
 				cell->type = WOLF;
@@ -127,7 +105,24 @@ void move_wolf(world_cell* cell, world_cell* dest_cell) {
 				cell->starvation_period = wolf_starvation_period;
 			} else
 				cleanup_cell(cell);
+			break;
+		case WOLF:
+			/* Wolf fighting wolf */
+			if(cell->starvation_period == dest_cell->starvation_period){
+				dest_cell->breeding_period = MAX_BREED(cell, dest_cell);
+			} else {
+				dest_cell->breeding_period = (cell->starvation_period > dest_cell->starvation_period ? cell->breeding_period : dest_cell->breeding_period);
+				dest_cell->starvation_period = MAX_STARV(cell, dest_cell);
+			}
+
+			cleanup_cell(cell);
+			break;
+		default:
+			printf("Shouldn't happen, wolf moving to: %c\n", dest_cell->type); /* why the hell is this throwin' up wolfs?! */
+			return;
 	}
+	dest_cell->moved = 1;
+	dest_cell->type = WOLF;
 }
 
 inline void move_squirrel_in_tree(world_cell* cell){
@@ -140,41 +135,7 @@ inline void move_squirrel_in_tree(world_cell* cell){
 void move_squirrel(world_cell* cell, world_cell* dest_cell) {
 	dest_cell->moved = 1;
 	switch(dest_cell->type){
-		case TREE:
-			dest_cell->breeding_period = cell->breeding_period;
-			dest_cell->type = SQUIRREL_IN_TREE;
-
-			move_squirrel_in_tree(cell);
-			break;
-		case SQUIRREL:
-			/* Squirrel moving to squirrel*/
-			
-			dest_cell->breeding_period = MAX_BREED(cell, dest_cell);
-
-			if(cell->type == SQUIRREL_IN_TREE){
-				dest_cell->type = SQUIRREL;
-				cell->type = TREE;
-			} else {
-				dest_cell->type = cell->type;
-				cleanup_cell(cell);
-			}
-			
-			break;
-		case SQUIRREL_IN_TREE:
-			dest_cell->breeding_period = MAX_BREED(cell, dest_cell);
-
-			move_squirrel_in_tree(cell);
-			break;
-		case WOLF:
-			/* Wolf eating squirrel */
-			dest_cell->starvation_period = wolf_starvation_period; 
-			
-			move_squirrel_in_tree(cell);
-			break;
-		default:
-			if(dest_cell-> type != EMPTY){
-				printf("Shouldn't happen, squirrel moving to: %c\n", dest_cell->type);
-			}
+		case EMPTY:
 			if(cell->type == SQUIRREL_IN_TREE){
 				/* Squirrel leaving tree */
 				dest_cell->type = SQUIRREL;
@@ -200,6 +161,37 @@ void move_squirrel(world_cell* cell, world_cell* dest_cell) {
 				} else
 					cell->type = EMPTY;
 			}
+			break;
+		case TREE:
+			dest_cell->breeding_period = cell->breeding_period;
+			dest_cell->type = SQUIRREL_IN_TREE;
+
+			move_squirrel_in_tree(cell);
+			break;
+		case SQUIRREL:
+			/* Squirrel moving to squirrel*/
+			dest_cell->breeding_period = MAX_BREED(cell, dest_cell);
+
+			if(cell->type == SQUIRREL_IN_TREE){
+				dest_cell->type = SQUIRREL;
+				cell->type = TREE;
+			} else {
+				dest_cell->type = cell->type;
+				cleanup_cell(cell);
+			}
+
+			break;
+		case SQUIRREL_IN_TREE:
+			dest_cell->breeding_period = MAX_BREED(cell, dest_cell);
+			move_squirrel_in_tree(cell);
+			break;
+		case WOLF:
+			/* Wolf eating squirrel */
+			dest_cell->starvation_period = wolf_starvation_period;
+			move_squirrel_in_tree(cell);
+			break;
+		default:
+			printf("Shouldn't happen, squirrel moving to: %c\n", dest_cell->type);
 	}
 }
 
@@ -254,7 +246,7 @@ void update_world_cell(unsigned short x, unsigned short y){
 		case WOLF: {
 				int squirrels_found = 0;
 				world_cell** squirrel_cells = malloc(4 * sizeof(world_cell*));
-	
+
 				possible_cells = retrieve_possible_cells(cell);
 				for(; count < 4 && possible_cells[count] != NULL; ++count){
 					if(possible_cells[count]->type == SQUIRREL)
@@ -367,8 +359,7 @@ void start_world_simulation(void){
 	
 }
 
-
-void freemem(void){
+inline void freemem(void){
 	register unsigned short i = 0;
 
 	for(; i < grid_size; ++i){

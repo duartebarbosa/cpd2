@@ -85,7 +85,6 @@ inline void cleanup_cell(world_cell* cell){
 }
 
 void move_wolf(world_cell* cell, world_cell* dest_cell) {
-
 	#pragma omp critical (move)
 	{
 	dest_cell->moved = 1;
@@ -98,6 +97,20 @@ void move_wolf(world_cell* cell, world_cell* dest_cell) {
 			
 			/* clean cell */
 			cleanup_cell(cell);
+			break;
+		case EMPTY:
+			/* simple Wolf */
+			dest_cell->type = cell->type;
+			dest_cell->breeding_period = cell->breeding_period;
+			dest_cell->starvation_period = cell->starvation_period;
+
+			/* clean cell or reproduce*/
+			if(dest_cell->breeding_period >= wolf_breeding_period && dest_cell->starvation_period > 1){
+				cell->type = WOLF;
+				cell->breeding_period = dest_cell->breeding_period = 0;
+				cell->starvation_period = wolf_starvation_period;
+			} else
+				cleanup_cell(cell);
 			break;
 		case WOLF:
 			/* Wolf fighting wolf */
@@ -114,23 +127,12 @@ void move_wolf(world_cell* cell, world_cell* dest_cell) {
 			cleanup_cell(cell);
 			break;
 		default:
-			/* simple Wolf */
-			dest_cell->type = cell->type;
-			dest_cell->breeding_period = cell->breeding_period;
-			dest_cell->starvation_period = cell->starvation_period;
-			
-			/* clean cell or reproduce*/
-			if(dest_cell->breeding_period >= wolf_breeding_period && dest_cell->starvation_period > 1){
-				cell->type = WOLF;
-				cell->breeding_period = dest_cell->breeding_period = 0;
-				cell->starvation_period = wolf_starvation_period;
-			} else
-				cleanup_cell(cell);
+			printf("Shouldn't happen, wolf moving to: %c\n", dest_cell->type); /* why the hell is this throwin' up wolfs?! */
 	}
 	}
 }
 
-void moving_squirrel_in_tree(world_cell *cell){
+inline void move_squirrel_in_tree(world_cell* cell){
 	if(cell->type == SQUIRREL_IN_TREE)
 		cell->type = TREE;
 	else
@@ -142,40 +144,7 @@ void move_squirrel(world_cell* cell, world_cell* dest_cell) {
 	{
 	dest_cell->moved = 1;
 	switch(dest_cell->type){
-		case TREE:
-			dest_cell->breeding_period = cell->breeding_period;
-			dest_cell->type = SQUIRREL_IN_TREE;
-
-			moving_squirrel_in_tree(cell);
-			break;
-		case SQUIRREL:
-			/* Squirrel moving to squirrel*/
-			
-			dest_cell->breeding_period = MAX_BREED(cell, dest_cell);
-
-			if(cell->type == SQUIRREL_IN_TREE){
-				dest_cell->type = SQUIRREL;
-				cell->type = TREE;		
-			} else {
-				dest_cell->type = cell->type;
-				cleanup_cell(cell);
-			}
-			
-			break;
-		case SQUIRREL_IN_TREE:
-			dest_cell->type = SQUIRREL_IN_TREE;
-			dest_cell->breeding_period = MAX_BREED(cell, dest_cell);
-
-			moving_squirrel_in_tree(cell);
-			break;
-		case WOLF:
-			/* Wolf eating squirrel */
-			dest_cell->starvation_period = wolf_starvation_period; 
-			
-			moving_squirrel_in_tree(cell);			
-			break;
-
-		default:
+		case EMPTY:
 			if(cell->type == SQUIRREL_IN_TREE){
 				/* Squirrel leaving tree */
 				dest_cell->type = SQUIRREL;
@@ -201,6 +170,37 @@ void move_squirrel(world_cell* cell, world_cell* dest_cell) {
 				} else
 					cell->type = EMPTY;
 			}
+			break;
+		case TREE:
+			dest_cell->breeding_period = cell->breeding_period;
+			dest_cell->type = SQUIRREL_IN_TREE;
+
+			move_squirrel_in_tree(cell);
+			break;
+		case SQUIRREL:
+			/* Squirrel moving to squirrel*/
+			dest_cell->breeding_period = MAX_BREED(cell, dest_cell);
+
+			if(cell->type == SQUIRREL_IN_TREE){
+				dest_cell->type = SQUIRREL;
+				cell->type = TREE;
+			} else {
+				dest_cell->type = cell->type;
+				cleanup_cell(cell);
+			}
+			
+			break;
+		case SQUIRREL_IN_TREE:
+			dest_cell->breeding_period = MAX_BREED(cell, dest_cell);
+			move_squirrel_in_tree(cell);
+			break;
+		case WOLF:
+			/* Wolf eating squirrel */
+			dest_cell->starvation_period = wolf_starvation_period;
+			move_squirrel_in_tree(cell);
+			break;
+		default:
+			printf("Shouldn't happen, squirrel moving to: %c\n", dest_cell->type);
 	}
 }
 }
@@ -257,7 +257,6 @@ void update_world_cell(unsigned short x, unsigned short y){
 				int squirrels_found = 0;
 				world_cell** squirrel_cells = malloc(4 * sizeof(world_cell*));
 
-	
 				possible_cells = retrieve_possible_cells(cell);
 				for(; count < 4 && possible_cells[count] != NULL; ++count){
 					if(possible_cells[count]->type == SQUIRREL)
@@ -331,7 +330,7 @@ void start_world_simulation(void){
 		if(number_of_generations == 1)
 			return;
 
-		#pragma omp parallel for private(j) 
+		#pragma omp parallel for private(j)
 		for(i = 0; i < grid_size; ++i){
 			for (j = 0; j < grid_size; ++j){
 				if (world[i][j].moved){
