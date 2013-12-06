@@ -516,6 +516,7 @@ void resolve_conflicts(int generation_color, int gen_number){
 		if(conf1[i].moved == UPDATED || conf1[i].moved == NEW_BORN){
 			//move to my world
 			if(conf1[i].type == WOLF){
+				printf("WOLF PRE CONFLICT MOVE STARV %d \n", conf1[i].starvation_period);
 				move_wolf(&conf1[i], &world[payload-2][i]);
 			} else {
 				move_squirrel(&conf1[i], &world[payload-2][i]);
@@ -526,6 +527,7 @@ void resolve_conflicts(int generation_color, int gen_number){
 		if(conf2[i].moved == UPDATED || conf2[i].moved == NEW_BORN){
 			//move to my world
 			if(conf2[i].type == WOLF){
+				printf("WOLF PRE CONFLICT MOVE STARV2 %d \n", conf2[i].starvation_period);
 				move_wolf(&conf2[i], &world[payload-1][i]);
 			} else {
 				move_squirrel(&conf2[i], &world[payload-1][i]);
