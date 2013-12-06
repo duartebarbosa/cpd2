@@ -359,7 +359,7 @@ void start_world_simulation(void){
 		for(i = 0; i < grid_size; ++i){
 			for (j = 0; j < grid_size; ++j){
 				if (world[i][j].moved){
-					if (world[i][j].type == SQUIRREL || world[i][j].type == SQUIRREL_IN_TREE){
+					if (world[i][j].type == SQUIRREL){
 						world[i][j].breeding_period++;
 					} else if (world[i][j].type == WOLF){
 						world[i][j].starvation_period--;
@@ -406,7 +406,7 @@ int main(int argc, char **argv){
 
 	start_world_simulation();
 
-	print_grid(world);
+	print_world();
 
 	#ifdef GETTIME
     printf("OpenMP time: %fs\n", omp_get_wtime() - start);
