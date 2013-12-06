@@ -130,6 +130,13 @@ void move_wolf(world_cell* cell, world_cell* dest_cell) {
 	}
 }
 
+inline void move_squirrel_in_tree(world_cell* cell){
+	if(cell->type == SQUIRREL_IN_TREE)
+		cell->type = TREE;
+	else
+		cleanup_cell(cell);
+}
+
 void move_squirrel(world_cell* cell, world_cell* dest_cell) {
 	dest_cell->moved = 1;
 	switch(dest_cell->type){
@@ -137,11 +144,7 @@ void move_squirrel(world_cell* cell, world_cell* dest_cell) {
 			dest_cell->breeding_period = cell->breeding_period;
 			dest_cell->type = SQUIRREL_IN_TREE;
 
-			if(cell->type == SQUIRREL_IN_TREE)
-				cell->type = TREE;
-			else
-				cleanup_cell(cell);
-
+			move_squirrel_in_tree(cell);
 			break;
 		case SQUIRREL:
 			/* Squirrel moving to squirrel*/
@@ -158,24 +161,15 @@ void move_squirrel(world_cell* cell, world_cell* dest_cell) {
 			
 			break;
 		case SQUIRREL_IN_TREE:
-			dest_cell->type = SQUIRREL_IN_TREE;
 			dest_cell->breeding_period = MAX_BREED(cell, dest_cell);
 
-			if(cell->type == SQUIRREL_IN_TREE)
-				cell->type = TREE;
-			else
-				cleanup_cell(cell);
-
+			move_squirrel_in_tree(cell);
 			break;
 		case WOLF:
 			/* Wolf eating squirrel */
 			dest_cell->starvation_period = wolf_starvation_period; 
 			
-			if(cell->type == SQUIRREL_IN_TREE)
-				cell->type = TREE;
-			else
-				cleanup_cell(cell);
-
+			move_squirrel_in_tree(cell);
 			break;
 		default:
 			if(dest_cell-> type != EMPTY){
