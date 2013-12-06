@@ -102,7 +102,6 @@ void parse_input(char* filename){
 		world[i][j].type = type;
 		if(type == WOLF){
 			world[i][j].starvation_period = wolf_starvation_period;
-			printf("WOLF starvation 1 - %d, wsp: %d\n", world[i][j].starvation_period, wolf_starvation_period);
 		}
 	}
 
@@ -692,7 +691,7 @@ int main(int argc, char **argv){
 
 		info[0] = grid_size;
 
-		print_grid(world, grid_size);
+		//print_grid(world, grid_size);
 
 		bottom = 0;
 		top = chunk_size = CHUNK;
