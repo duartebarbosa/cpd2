@@ -137,11 +137,10 @@ void move_squirrel(world_cell* cell, world_cell* dest_cell) {
 			dest_cell->breeding_period = cell->breeding_period;
 			dest_cell->type = SQUIRREL_IN_TREE;
 
-			if(cell->type == SQUIRREL_IN_TREE){
+			if(cell->type == SQUIRREL_IN_TREE)
 				cell->type = TREE;
-			} else {
+			else
 				cleanup_cell(cell);
-			}
 
 			break;
 		case SQUIRREL:
@@ -162,22 +161,20 @@ void move_squirrel(world_cell* cell, world_cell* dest_cell) {
 			dest_cell->type = SQUIRREL_IN_TREE;
 			dest_cell->breeding_period = MAX_BREED(cell, dest_cell);
 
-			if(cell->type == SQUIRREL_IN_TREE){
+			if(cell->type == SQUIRREL_IN_TREE)
 				cell->type = TREE;
-			} else {
+			else
 				cleanup_cell(cell);
-			}
 
 			break;
 		case WOLF:
 			/* Wolf eating squirrel */
 			dest_cell->starvation_period = wolf_starvation_period; 
 			
-			if(cell->type == SQUIRREL_IN_TREE){
+			if(cell->type == SQUIRREL_IN_TREE)
 				cell->type = TREE;
-			} else {
+			else
 				cleanup_cell(cell);
-			}
 
 			break;
 		default:
@@ -263,7 +260,6 @@ void update_world_cell(unsigned short x, unsigned short y){
 		case WOLF: {
 				int squirrels_found = 0;
 				world_cell** squirrel_cells = malloc(4 * sizeof(world_cell*));
-
 	
 				possible_cells = retrieve_possible_cells(cell);
 				for(; count < 4 && possible_cells[count] != NULL; ++count){
