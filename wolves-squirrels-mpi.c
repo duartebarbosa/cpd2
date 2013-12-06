@@ -102,7 +102,7 @@ void parse_input(char* filename){
 		world[i][j].type = type;
 		if(type == WOLF){
 			world[i][j].starvation_period = wolf_starvation_period;
-			printf("WOLF starvation 1 - %d\n", world[i][j].starvation_period);
+			printf("WOLF starvation 1 - %d, wsp: %d\n", world[i][j].starvation_period, wolf_starvation_period);
 		}
 	}
 
@@ -397,7 +397,7 @@ void print_grid(world_cell ** world, int max){
 			printf("[- Task: %d] %d|",taskid,  i);
 		}
 		for(; j < grid_size; ++j){
-				printf("%c(%d)|", world[i][j].type, world[i][j].starvation_period);
+				printf("%c|", world[i][j].type, world[i][j].starvation_period);
 			
 		}
 		printf("\n");
@@ -694,15 +694,16 @@ int main(int argc, char **argv){
 	if(taskid == MASTER){
 		MPI_Request size_reqs[numtasks-1];
 
-		parse_input(argv[1]); /* Filename */
-
-		print_grid(world, grid_size);
-
-		info[0] = grid_size;
 		info[1] = wolf_breeding_period = atoi(argv[2]);
 		info[2] = squirrel_breeding_period = atoi(argv[3]);
 		info[3] = wolf_starvation_period = atoi(argv[4]);
 		info[4] = number_of_generations = atoi(argv[5]);
+
+		parse_input(argv[1]);
+
+		info[0] = grid_size;
+
+		print_grid(world, grid_size);
 
 		bottom = 0;
 		top = chunk_size = CHUNK;
